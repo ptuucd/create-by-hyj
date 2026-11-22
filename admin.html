@@ -10,7 +10,7 @@
     .topbar a, .topbar button { color: #e2e8f0; background: none; border: 1px solid #334155; padding: 6px 14px; border-radius: 6px; text-decoration: none; cursor: pointer; font-size: 13px; }
     .auth-box { max-width: 420px; margin: 64px auto; background: #fff; padding: 32px; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
     .auth-box h2 { margin-top: 0; font-size: 22px; }
-    .dashboard { max-width: 900px; margin: 28px auto; padding: 0 20px; display: none; }
+    .dashboard { max-width: 920px; margin: 28px auto; padding: 0 20px; display: none; }
     .panel { background: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .panel h3 { margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
     .form-group { margin-bottom: 14px; }
@@ -38,14 +38,20 @@
 
     /* Word 風格富文本編輯器 */
     .editor-wrapper { border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; }
-    .editor-toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; background: #f8fafc; border-bottom: 1px solid #cbd5e1; align-items: center; }
-    .tb-group { display: inline-flex; gap: 3px; padding-right: 6px; margin-right: 4px; border-right: 1px solid #cbd5e1; align-items: center; }
+    .editor-toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; background: #f8fafc; border-bottom: 1px solid #cbd5e1; align-items: center; }
+    .tb-group { display: inline-flex; gap: 4px; padding-right: 8px; margin-right: 2px; border-right: 1px solid #cbd5e1; align-items: center; flex-wrap: wrap; }
     .tb-group:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+    .tb-label { font-size: 12px; color: #64748b; font-weight: 600; margin-right: 2px; }
     .tb-btn { background: #fff; border: 1px solid #cbd5e1; color: #1e293b; border-radius: 5px; padding: 4px 8px; font-size: 13px; cursor: pointer; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
     .tb-btn:hover { background: #e2e8f0; }
     .tb-select { padding: 3px 6px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 5px; height: 28px; background: #fff; cursor: pointer; width: auto; }
-    .color-picker-label { display: inline-flex; align-items: center; gap: 3px; background: #fff; border: 1px solid #cbd5e1; border-radius: 5px; padding: 2px 6px; height: 24px; font-size: 12px; cursor: pointer; font-weight: 600; }
-    .color-picker-label input[type="color"] { border: none; width: 18px; height: 18px; padding: 0; background: none; cursor: pointer; }
+    
+    /* 顏色色塊與自訂調色盤 */
+    .swatch-btn { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #94a3b8; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; transition: transform 0.1s; }
+    .swatch-btn:hover { transform: scale(1.15); border-color: #0f172a; }
+    .color-picker-wrap { display: inline-flex; align-items: center; gap: 2px; background: #fff; border: 1px solid #cbd5e1; border-radius: 5px; padding: 1px 5px; height: 24px; font-size: 11px; color: #475569; cursor: pointer; }
+    .color-picker-wrap input[type="color"] { border: none; width: 18px; height: 18px; padding: 0; background: none; cursor: pointer; }
+
     .table-tools { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; font-size: 12px; align-items: center; }
     .table-tools button { background: #fff; border: 1px solid #93c5fd; color: #1d4ed8; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
     .table-tools button:hover { background: #dbeafe; }
@@ -156,9 +162,10 @@
       </div>
 
       <div class="form-group">
-        <label>文章內容（支援粗體、顏色、表格、文中插入多個超連結）</label>
+        <label>文章內容（先反白選取文字，再點選上方格式或顏色）</label>
         <div class="editor-wrapper">
           <div class="editor-toolbar">
+            <!-- 段落與文字樣式 -->
             <div class="tb-group">
               <select class="tb-select" onchange="execFormatBlock(this.value); this.value='';" title="段落樣式">
                 <option value="">段落樣式</option>
@@ -166,44 +173,65 @@
                 <option value="H2">大標題</option>
                 <option value="H3">中標題</option>
               </select>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('bold')" title="粗體"><b>B</b></button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('italic')" title="斜體"><i>I</i></button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('underline')" title="底線"><u>U</u></button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('strikeThrough')" title="刪除線"><s>S</s></button>
             </div>
+
+            <!-- 文字顏色（一鍵常用色 + 自訂色） -->
             <div class="tb-group">
-              <button type="button" class="tb-btn" onclick="execCmd('bold')" title="粗體"><b>B</b></button>
-              <button type="button" class="tb-btn" onclick="execCmd('italic')" title="斜體"><i>I</i></button>
-              <button type="button" class="tb-btn" onclick="execCmd('underline')" title="底線"><u>U</u></button>
-              <button type="button" class="tb-btn" onclick="execCmd('strikeThrough')" title="刪除線"><s>S</s></button>
-            </div>
-            <div class="tb-group">
-              <label class="color-picker-label" title="文字顏色">
-                <span>A</span>
-                <input type="color" id="fore-color-input" value="#dc2626" onchange="execCmd('foreColor', this.value)" />
+              <span class="tb-label">字色:</span>
+              <button type="button" class="swatch-btn" style="background:#dc2626;" onmousedown="event.preventDefault()" onclick="execCmd('foreColor', '#dc2626')" title="紅色字"></button>
+              <button type="button" class="swatch-btn" style="background:#2563eb;" onmousedown="event.preventDefault()" onclick="execCmd('foreColor', '#2563eb')" title="藍色字"></button>
+              <button type="button" class="swatch-btn" style="background:#16a34a;" onmousedown="event.preventDefault()" onclick="execCmd('foreColor', '#16a34a')" title="綠色字"></button>
+              <button type="button" class="swatch-btn" style="background:#d97706;" onmousedown="event.preventDefault()" onclick="execCmd('foreColor', '#d97706')" title="橘色字"></button>
+              <button type="button" class="swatch-btn" style="background:#7c3aed;" onmousedown="event.preventDefault()" onclick="execCmd('foreColor', '#7c3aed')" title="紫色字"></button>
+              <button type="button" class="swatch-btn" style="background:#1e293b;" onmousedown="event.preventDefault()" onclick="execCmd('foreColor', '#1e293b')" title="預設深黑字"></button>
+              <label class="color-picker-wrap" title="自訂文字顏色">
+                <span>自訂</span>
+                <input type="color" id="fore-color-input" value="#dc2626" oninput="execCmd('foreColor', this.value)" onchange="execCmd('foreColor', this.value)" />
               </label>
-              <label class="color-picker-label" title="文字底色">
-                <span>底色</span>
-                <input type="color" id="hilite-color-input" value="#fef08a" onchange="execCmd('hiliteColor', this.value)" />
+            </div>
+
+            <!-- 螢光底色 -->
+            <div class="tb-group">
+              <span class="tb-label">底色:</span>
+              <button type="button" class="swatch-btn" style="background:#fef08a;" onmousedown="event.preventDefault()" onclick="execCmd('hiliteColor', '#fef08a')" title="黃色螢光底"></button>
+              <button type="button" class="swatch-btn" style="background:#bbf7d0;" onmousedown="event.preventDefault()" onclick="execCmd('hiliteColor', '#bbf7d0')" title="綠色螢光底"></button>
+              <button type="button" class="swatch-btn" style="background:#fbcfe8;" onmousedown="event.preventDefault()" onclick="execCmd('hiliteColor', '#fbcfe8')" title="粉色螢光底"></button>
+              <button type="button" class="swatch-btn" style="background:#ffffff; color:#64748b;" onmousedown="event.preventDefault()" onclick="execCmd('hiliteColor', 'transparent')" title="清除底色">✕</button>
+              <label class="color-picker-wrap" title="自訂底色">
+                <span>自訂</span>
+                <input type="color" id="hilite-color-input" value="#fef08a" oninput="execCmd('hiliteColor', this.value)" onchange="execCmd('hiliteColor', this.value)" />
               </label>
             </div>
+
+            <!-- 對齊與清單 -->
             <div class="tb-group">
-              <button type="button" class="tb-btn" onclick="execCmd('justifyLeft')" title="靠左對齊">≡左</button>
-              <button type="button" class="tb-btn" onclick="execCmd('justifyCenter')" title="置中對齊">≡中</button>
-              <button type="button" class="tb-btn" onclick="execCmd('justifyRight')" title="靠右對齊">≡右</button>
-              <button type="button" class="tb-btn" onclick="execCmd('insertUnorderedList')" title="項目符號">• 清單</button>
-              <button type="button" class="tb-btn" onclick="execCmd('insertOrderedList')" title="編號清單">1. 清單</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('justifyLeft')" title="靠左對齊">≡左</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('justifyCenter')" title="置中對齊">≡中</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('justifyRight')" title="靠右對齊">≡右</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('insertUnorderedList')" title="項目符號">• 清單</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('insertOrderedList')" title="編號清單">1. 清單</button>
             </div>
+
+            <!-- 連結、表格與清除格式 -->
             <div class="tb-group">
-              <button type="button" class="tb-btn" onclick="openLinkModal()" title="在文中插入超連結">🔗 插入連結</button>
-              <button type="button" class="tb-btn" onclick="openTableModal()" title="插入表格">📊 插入表格</button>
-              <button type="button" class="tb-btn" onclick="execCmd('removeFormat')" title="清除選取文字格式">清除格式</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="openLinkModal()" title="在文中插入超連結">🔗 插入連結</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="openTableModal()" title="插入表格">📊 插入表格</button>
+              <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('removeFormat')" title="清除選取文字格式">清除格式</button>
             </div>
           </div>
+
           <div class="table-tools" id="table-tools-bar" style="display:none;">
             <strong>表格調整：</strong>
-            <button type="button" onclick="tableAddRow()">+ 下方加一列</button>
-            <button type="button" onclick="tableAddCol()">+ 右側加一欄</button>
-            <button type="button" onclick="tableDelRow()">- 刪除此列</button>
-            <button type="button" onclick="tableDelCol()">- 刪除此欄</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="tableAddRow()">+ 下方加一列</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="tableAddCol()">+ 右側加一欄</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="tableDelRow()">- 刪除此列</button>
+            <button type="button" onmousedown="event.preventDefault()" onclick="tableDelCol()">- 刪除此欄</button>
           </div>
-          <div id="post-editor" class="rich-editor-area" contenteditable="true" data-placeholder="在此輸入文章內容，可隨時使用上方工具列設定粗體、顏色、表格或插入多個連結..."></div>
+          <div id="post-editor" class="rich-editor-area" contenteditable="true" data-placeholder="在此輸入文章內容，反白選取文字後即可點擊上方色塊改顏色、加粗、插入表格或多個連結..."></div>
         </div>
       </div>
 
@@ -313,12 +341,21 @@
       }
     }
 
+    // 即時追蹤編輯器內的文字選取狀態（避免開啟調色盤後遺失選區）
+    document.addEventListener('selectionchange', () => {
+      if (document.activeElement === editorEl) {
+        saveSelection();
+      }
+    });
     editorEl.addEventListener('mouseup', saveSelection);
     editorEl.addEventListener('keyup', saveSelection);
     editorEl.addEventListener('focus', updateTableToolbarVisibility);
 
     function execCmd(cmd, val = null) {
       restoreSelection();
+      try {
+        document.execCommand('styleWithCSS', false, true);
+      } catch (e) {}
       document.execCommand(cmd, false, val);
       saveSelection();
     }
@@ -549,7 +586,7 @@
       return new TextDecoder().decode(plainBuf);
     }
 
-    // === 頁面狀態與驗證控制（直接讀取 data.json 與 localStorage 裡的原密碼設定） ===
+    // === 頁面狀態與驗證控制 ===
     function showView(viewId) {
       ['setup-view', 'login-view', 'dashboard-view'].forEach(id => {
         document.getElementById(id).style.display = id === viewId ? 'block' : 'none';
@@ -751,7 +788,6 @@
       const meta = await getRes.json();
       const latestRemote = JSON.parse(b64ToUtf8(meta.content));
 
-      // 確保加密金鑰不會在儲存文章時遺失
       if (!siteData.encryptedToken) {
         siteData.encryptedToken = latestRemote.encryptedToken || currentEncryptedToken || '';
       }
