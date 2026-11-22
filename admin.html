@@ -369,7 +369,7 @@
       const hasGas = Boolean((siteData.suggestionApiUrl || '').trim());
       if (hasGas) {
         badge.className = 'storage-pill storage-gdrive';
-        badge.textContent = '✓ 圖片存至 Google 雲端硬碟（不佔 GitHub 空間）';
+        badge.textContent = '✓ 圖片存至 Google 雲端硬碟（刪文自動移至垃圾桶）';
       } else {
         badge.className = 'storage-pill storage-github';
         badge.textContent = '圖片存至 GitHub（設定上方網址可改存 Google 雲端）';
@@ -448,7 +448,6 @@
       }
     });
 
-    // 智慧上傳：若有設定 Google Apps Script 網址，自動上傳至 Google 雲端硬碟；否則退回 GitHub
     async function uploadSingleImage(file) {
       const compressedB64 = await compressImageToBase64(file);
       const gasUrl = (siteData.suggestionApiUrl || '').trim();
@@ -473,7 +472,6 @@
         return result.url;
       }
 
-      // 備援：上傳至 GitHub
       const ym = new Date().toISOString().slice(0, 7);
       const uniqueId = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
       const imgPath = `images/${ym}/img_${uniqueId}.jpg`;
@@ -1006,7 +1004,7 @@
       loadSuggestions();
     }
 
-    async function commitDataJson(commitMsg) {
+    async function commitDataJson(commitMsg, silent = false) {
       const getRes = await fetch(`${API_BASE}/contents/data.json?ref=${CONFIG.branch}&t=${Date.now()}`, {
         headers: { 'Authorization': `Bearer ${activeToken}` }
       });
@@ -1031,7 +1029,9 @@
         })
       });
       if (!putRes.ok) throw new Error('儲存資料失敗');
-      showToast('已成功儲存！（首頁約 30 秒～1 分鐘完成更新）');
+      if (!silent) {
+        showToast('已成功儲存！（首頁約 30 秒～1 分鐘完成更新）');
+      }
     }
 
     // === 匿名小建議讀取與管理 ===
@@ -1147,6 +1147,28 @@
       await commitDataJson(`Delete category: ${target}`);
     }
 
+    // === 抽取文章中所有 Google 雲端硬碟圖片 ID ===
+    function extractGoogleDriveFileIds(post) {
+      const ids = new Set();
+      const addFromUrl = (url) => {
+        if (!url || typeof url !== 'string') return;
+        if (!url.includes('drive.google.com')) return;
+        const m1 = url.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        if (m1 && m1[1]) ids.add(m1[1]);
+        const m2 = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (m2 && m2[1]) ids.add(m2[1]);
+      };
+
+      addFromUrl(post.imageUrl);
+      const div = document.createElement('div');
+      div.innerHTML = String(post.content || '');
+      div.querySelectorAll('img').forEach(img => {
+        addFromUrl(img.getAttribute('src'));
+        addFromUrl(img.getAttribute('data-gh-src'));
+      });
+      return Array.from(ids);
+    }
+
     // === 文章發布 / 編輯 / 刪除 ===
     async function submitPost() {
       if (isUploadingInlineImages) {
@@ -1245,11 +1267,49 @@
     async function deletePost(id) {
       const idx = siteData.posts.findIndex(p => p.id === id);
       if (idx === -1) return;
-      if (!confirm(`確定要刪除「${siteData.posts[idx].title}」嗎？`)) return;
-      const title = siteData.posts[idx].title;
+      const targetPost = siteData.posts[idx];
+      if (!confirm(`確定要刪除「${targetPost.title}」嗎？（對應的 Google 雲端硬碟圖片也會一併移至垃圾桶）`)) return;
+
+      const candidateIds = extractGoogleDriveFileIds(targetPost);
+      const title = targetPost.title;
+
+      // 先從文章列表移除並寫入 data.json
       siteData.posts.splice(idx, 1);
       renderAdminPosts();
-      await commitDataJson(`Delete post: ${title}`);
+      await commitDataJson(`Delete post: ${title}`, true);
+
+      // 過濾掉其他剩餘文章仍有使用的圖片 ID，避免誤刪
+      const stillUsedIds = new Set();
+      siteData.posts.forEach(p => {
+        extractGoogleDriveFileIds(p).forEach(fid => stillUsedIds.add(fid));
+      });
+      const idsToTrash = candidateIds.filter(fid => !stillUsedIds.has(fid));
+
+      const gasUrl = (siteData.suggestionApiUrl || '').trim();
+      if (idsToTrash.length > 0 && gasUrl) {
+        try {
+          showToast(`正在將 ${idsToTrash.length} 張雲端硬碟圖片移至垃圾桶...`);
+          const res = await fetch(gasUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'deleteImages',
+              key: suggestionReadKey,
+              fileIds: idsToTrash
+            })
+          });
+          const result = await res.json();
+          if (result.ok) {
+            showToast(`已刪除文章，並將 ${result.deletedCount || idsToTrash.length} 張雲端圖片移至垃圾桶！`);
+            return;
+          }
+        } catch (err) {
+          console.error('同步刪除雲端圖片失敗:', err);
+        }
+        showToast('文章已刪除，但雲端圖片清理失敗（請確認 Apps Script 已部署為新版本）');
+      } else {
+        showToast('已成功刪除文章！（首頁約 30 秒～1 分鐘完成更新）');
+      }
     }
 
     function renderAdminPosts() {
