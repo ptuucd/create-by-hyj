@@ -10,12 +10,12 @@
     .topbar a, .topbar button { color: #e2e8f0; background: none; border: 1px solid #334155; padding: 6px 14px; border-radius: 6px; text-decoration: none; cursor: pointer; font-size: 13px; }
     .auth-box { max-width: 420px; margin: 64px auto; background: #fff; padding: 32px; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
     .auth-box h2 { margin-top: 0; font-size: 22px; }
-    .dashboard { max-width: 860px; margin: 28px auto; padding: 0 20px; display: none; }
+    .dashboard { max-width: 900px; margin: 28px auto; padding: 0 20px; display: none; }
     .panel { background: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
     .panel h3 { margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #475569; }
-    input[type="text"], input[type="password"], input[type="url"], select, textarea {
+    input[type="text"], input[type="password"], input[type="url"], select {
       width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-family: inherit;
     }
     .row { display: flex; gap: 12px; flex-wrap: wrap; }
@@ -35,6 +35,31 @@
     .status { margin-top: 12px; font-size: 13px; font-weight: 500; }
     .link-switch { display: inline-block; margin-top: 14px; font-size: 13px; color: #2563eb; cursor: pointer; text-decoration: underline; }
     .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 100; }
+
+    /* Word 風格富文本編輯器 */
+    .editor-wrapper { border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; }
+    .editor-toolbar { display: flex; flex-wrap: wrap; gap: 4px; padding: 8px; background: #f8fafc; border-bottom: 1px solid #cbd5e1; align-items: center; }
+    .tb-group { display: inline-flex; gap: 3px; padding-right: 6px; margin-right: 4px; border-right: 1px solid #cbd5e1; align-items: center; }
+    .tb-group:last-child { border-right: none; padding-right: 0; margin-right: 0; }
+    .tb-btn { background: #fff; border: 1px solid #cbd5e1; color: #1e293b; border-radius: 5px; padding: 4px 8px; font-size: 13px; cursor: pointer; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
+    .tb-btn:hover { background: #e2e8f0; }
+    .tb-select { padding: 3px 6px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 5px; height: 28px; background: #fff; cursor: pointer; width: auto; }
+    .color-picker-label { display: inline-flex; align-items: center; gap: 3px; background: #fff; border: 1px solid #cbd5e1; border-radius: 5px; padding: 2px 6px; height: 24px; font-size: 12px; cursor: pointer; font-weight: 600; }
+    .color-picker-label input[type="color"] { border: none; width: 18px; height: 18px; padding: 0; background: none; cursor: pointer; }
+    .table-tools { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; font-size: 12px; align-items: center; }
+    .table-tools button { background: #fff; border: 1px solid #93c5fd; color: #1d4ed8; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
+    .table-tools button:hover { background: #dbeafe; }
+    .rich-editor-area { min-height: 240px; max-height: 520px; overflow-y: auto; padding: 14px 16px; outline: none; font-size: 15px; line-height: 1.7; }
+    .rich-editor-area:empty:before { content: attr(data-placeholder); color: #94a3b8; pointer-events: none; }
+    .rich-editor-area a { color: #2563eb; text-decoration: underline; }
+    .rich-editor-area table { width: 100%; border-collapse: collapse; margin: 12px 0; }
+    .rich-editor-area th, .rich-editor-area td { border: 1px solid #94a3b8; padding: 8px 10px; min-width: 60px; }
+    .rich-editor-area th { background: #f1f5f9; font-weight: 600; }
+
+    /* 插入連結 / 表格小彈窗 */
+    .mini-modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: none; align-items: center; justify-content: center; z-index: 90; padding: 16px; }
+    .mini-modal { background: #fff; padding: 20px 24px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 12px 30px rgba(0,0,0,0.18); }
+    .mini-modal h4 { margin: 0 0 14px; font-size: 16px; }
   </style>
 </head>
 <body>
@@ -49,7 +74,7 @@
 
   <!-- 1. 初次設定密碼畫面 -->
   <div id="setup-view" class="auth-box" style="display:none;">
-    <h2>初次設定管理員密碼</h2>
+    <h2>設定管理員密碼</h2>
     <p style="font-size:13px; color:#64748b;">系統會使用你設定的密碼將 GitHub Token 加密保存，之後登入只需輸入自訂密碼。</p>
     <div class="form-group">
       <label>GitHub Fine-grained Token（只需輸入這一次）</label>
@@ -123,26 +148,80 @@
         </div>
       </div>
       <div class="form-group">
-        <label>上傳圖片（選填，系統會自動壓縮）</label>
+        <label>封面圖片（選填，系統會自動壓縮）</label>
         <input type="file" id="post-image" accept="image/*" />
         <div id="current-image-hint" style="font-size:12px; color:#64748b; margin-top:4px; display:none;">
           目前已有封面圖 <label style="display:inline; font-weight:normal; cursor:pointer;"><input type="checkbox" id="remove-image-chk" /> 移除現有圖片</label>
         </div>
       </div>
+
       <div class="form-group">
-        <label>文章內容</label>
-        <textarea id="post-content" rows="5" placeholder="輸入文章內文..."></textarea>
-      </div>
-      <div class="row">
-        <div class="form-group">
-          <label>外部連結按鈕文字（選填）</label>
-          <input type="text" id="post-link-text" placeholder="例如：查看連結" />
+        <label>文章內容（支援粗體、顏色、表格、文中插入多個超連結）</label>
+        <div class="editor-wrapper">
+          <div class="editor-toolbar">
+            <div class="tb-group">
+              <select class="tb-select" onchange="execFormatBlock(this.value); this.value='';" title="段落樣式">
+                <option value="">段落樣式</option>
+                <option value="P">一般內文</option>
+                <option value="H2">大標題</option>
+                <option value="H3">中標題</option>
+              </select>
+            </div>
+            <div class="tb-group">
+              <button type="button" class="tb-btn" onclick="execCmd('bold')" title="粗體"><b>B</b></button>
+              <button type="button" class="tb-btn" onclick="execCmd('italic')" title="斜體"><i>I</i></button>
+              <button type="button" class="tb-btn" onclick="execCmd('underline')" title="底線"><u>U</u></button>
+              <button type="button" class="tb-btn" onclick="execCmd('strikeThrough')" title="刪除線"><s>S</s></button>
+            </div>
+            <div class="tb-group">
+              <label class="color-picker-label" title="文字顏色">
+                <span>A</span>
+                <input type="color" id="fore-color-input" value="#dc2626" onchange="execCmd('foreColor', this.value)" />
+              </label>
+              <label class="color-picker-label" title="文字底色">
+                <span>底色</span>
+                <input type="color" id="hilite-color-input" value="#fef08a" onchange="execCmd('hiliteColor', this.value)" />
+              </label>
+            </div>
+            <div class="tb-group">
+              <button type="button" class="tb-btn" onclick="execCmd('justifyLeft')" title="靠左對齊">≡左</button>
+              <button type="button" class="tb-btn" onclick="execCmd('justifyCenter')" title="置中對齊">≡中</button>
+              <button type="button" class="tb-btn" onclick="execCmd('justifyRight')" title="靠右對齊">≡右</button>
+              <button type="button" class="tb-btn" onclick="execCmd('insertUnorderedList')" title="項目符號">• 清單</button>
+              <button type="button" class="tb-btn" onclick="execCmd('insertOrderedList')" title="編號清單">1. 清單</button>
+            </div>
+            <div class="tb-group">
+              <button type="button" class="tb-btn" onclick="openLinkModal()" title="在文中插入超連結">🔗 插入連結</button>
+              <button type="button" class="tb-btn" onclick="openTableModal()" title="插入表格">📊 插入表格</button>
+              <button type="button" class="tb-btn" onclick="execCmd('removeFormat')" title="清除選取文字格式">清除格式</button>
+            </div>
+          </div>
+          <div class="table-tools" id="table-tools-bar" style="display:none;">
+            <strong>表格調整：</strong>
+            <button type="button" onclick="tableAddRow()">+ 下方加一列</button>
+            <button type="button" onclick="tableAddCol()">+ 右側加一欄</button>
+            <button type="button" onclick="tableDelRow()">- 刪除此列</button>
+            <button type="button" onclick="tableDelCol()">- 刪除此欄</button>
+          </div>
+          <div id="post-editor" class="rich-editor-area" contenteditable="true" data-placeholder="在此輸入文章內容，可隨時使用上方工具列設定粗體、顏色、表格或插入多個連結..."></div>
         </div>
-        <div class="form-group">
-          <label>外部連結網址（選填）</label>
-          <input type="url" id="post-link-url" placeholder="https://..." />
-        </div>
       </div>
+
+      <!-- 保留舊版文末單一按鈕欄位（選填，相容舊資料） -->
+      <details style="margin-bottom:16px; font-size:13px; color:#64748b;">
+        <summary style="cursor:pointer; font-weight:600;">文末獨立按鈕連結（選填，亦可直接在上方內文插入多個連結）</summary>
+        <div class="row" style="margin-top:10px;">
+          <div class="form-group" style="margin-bottom:0;">
+            <label>按鈕文字</label>
+            <input type="text" id="post-link-text" placeholder="例如：查看完整資料" />
+          </div>
+          <div class="form-group" style="margin-bottom:0;">
+            <label>按鈕網址</label>
+            <input type="url" id="post-link-url" placeholder="https://..." />
+          </div>
+        </div>
+      </details>
+
       <button id="publish-btn" class="btn" onclick="submitPost()">發布文章</button>
       <button id="cancel-edit-btn" class="btn btn-secondary" style="display:none; margin-left:8px;" onclick="resetPostForm()">取消編輯</button>
     </div>
@@ -155,6 +234,46 @@
 
   </div>
 
+  <!-- 插入連結小視窗 -->
+  <div id="link-modal" class="mini-modal-bg" onclick="if(event.target===this) closeMiniModal('link-modal')">
+    <div class="mini-modal">
+      <h4>插入超連結</h4>
+      <div class="form-group">
+        <label>顯示文字</label>
+        <input type="text" id="modal-link-text" placeholder="例如：點此查看資料" />
+      </div>
+      <div class="form-group">
+        <label>連結網址 (URL)</label>
+        <input type="url" id="modal-link-url" placeholder="https://..." />
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeMiniModal('link-modal')">取消</button>
+        <button type="button" class="btn btn-sm" onclick="confirmInsertLink()">插入</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 插入表格小視窗 -->
+  <div id="table-modal" class="mini-modal-bg" onclick="if(event.target===this) closeMiniModal('table-modal')">
+    <div class="mini-modal">
+      <h4>插入表格</h4>
+      <div class="row">
+        <div class="form-group">
+          <label>列數 (橫向幾列)</label>
+          <input type="text" id="modal-table-rows" value="3" />
+        </div>
+        <div class="form-group">
+          <label>欄數 (直向幾欄)</label>
+          <input type="text" id="modal-table-cols" value="3" />
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button type="button" class="btn btn-secondary btn-sm" onclick="closeMiniModal('table-modal')">取消</button>
+        <button type="button" class="btn btn-sm" onclick="confirmInsertTable()">建立表格</button>
+      </div>
+    </div>
+  </div>
+
   <div id="toast" class="toast"></div>
 
   <script>
@@ -163,25 +282,240 @@
       repo: 'create-by-hyj',
       branch: 'main'
     };
-    const ENCRYPTED_TOKEN = "eVhchXApnaj+1gzZvMShK52S1RUm5N+o6Zx5TXnV44MvoMu2mifUx4DB2Oen6GfCVelwsUk5l9LHWri2I3KANkv7FBS8Vf0N6yU2tItJ4ttCJVEuqEP1X40zJk84G4Bd0TzJpt8SMyu2HVxUpBJewAPuu/U7KowK9D9cInlaSwPKdgQJvk2925c=";
     const API_BASE = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
+    const CACHE_KEY = 'hyj_encrypted_auth_v2';
 
     let activeToken = '';
-    let siteData = { siteTitle: '', siteSubtitle: '', categories: [], posts: [] };
+    let currentEncryptedToken = '';
+    let siteData = { siteTitle: '我的網站', siteSubtitle: '', encryptedToken: '', encryptedUpdatedAt: 0, categories: [], posts: [] };
+    let savedRange = null;
 
-    // === 加密 / 解密工具 ===
+    // === 富文本編輯器游標與指令控制 ===
+    const editorEl = document.getElementById('post-editor');
+
+    function saveSelection() {
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        if (editorEl.contains(range.commonAncestorContainer)) {
+          savedRange = range.cloneRange();
+        }
+      }
+      updateTableToolbarVisibility();
+    }
+
+    function restoreSelection() {
+      editorEl.focus();
+      if (savedRange) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(savedRange);
+      }
+    }
+
+    editorEl.addEventListener('mouseup', saveSelection);
+    editorEl.addEventListener('keyup', saveSelection);
+    editorEl.addEventListener('focus', updateTableToolbarVisibility);
+
+    function execCmd(cmd, val = null) {
+      restoreSelection();
+      document.execCommand(cmd, false, val);
+      saveSelection();
+    }
+
+    function execFormatBlock(tag) {
+      if (!tag) return;
+      restoreSelection();
+      document.execCommand('formatBlock', false, tag);
+      saveSelection();
+    }
+
+    function openLinkModal() {
+      saveSelection();
+      const selectedText = savedRange ? savedRange.toString() : '';
+      document.getElementById('modal-link-text').value = selectedText;
+      document.getElementById('modal-link-url').value = '';
+      document.getElementById('link-modal').style.display = 'flex';
+      setTimeout(() => document.getElementById(selectedText ? 'modal-link-url' : 'modal-link-text').focus(), 50);
+    }
+
+    function confirmInsertLink() {
+      const text = document.getElementById('modal-link-text').value.trim();
+      let url = document.getElementById('modal-link-url').value.trim();
+      if (!url) { alert('請輸入連結網址！'); return; }
+      if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+      const displayText = text || url;
+
+      closeMiniModal('link-modal');
+      restoreSelection();
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.textContent = displayText;
+
+      const sel = window.getSelection();
+      if (sel.rangeCount > 0) {
+        const range = sel.getRangeAt(0);
+        range.deleteContents();
+        const space = document.createTextNode('\u00A0');
+        range.insertNode(space);
+        range.insertNode(a);
+        range.setStartAfter(space);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+      } else {
+        editorEl.appendChild(a);
+      }
+      saveSelection();
+    }
+
+    function openTableModal() {
+      saveSelection();
+      document.getElementById('table-modal').style.display = 'flex';
+    }
+
+    function confirmInsertTable() {
+      const rows = Math.max(1, Math.min(30, parseInt(document.getElementById('modal-table-rows').value) || 3));
+      const cols = Math.max(1, Math.min(15, parseInt(document.getElementById('modal-table-cols').value) || 3));
+      closeMiniModal('table-modal');
+      restoreSelection();
+
+      let html = '<table><thead><tr>';
+      for (let c = 0; c < cols; c++) html += `<th>標題 ${c + 1}</th>`;
+      html += '</tr></thead><tbody>';
+      for (let r = 1; r < rows; r++) {
+        html += '<tr>';
+        for (let c = 0; c < cols; c++) html += '<td>內容</td>';
+        html += '</tr>';
+      }
+      html += '</tbody></table><p><br></p>';
+
+      document.execCommand('insertHTML', false, html);
+      saveSelection();
+    }
+
+    function getActiveTableCell() {
+      const sel = window.getSelection();
+      if (!sel.rangeCount) return null;
+      const node = sel.anchorNode.nodeType === 3 ? sel.anchorNode.parentElement : sel.anchorNode;
+      return node ? node.closest('td, th') : null;
+    }
+
+    function updateTableToolbarVisibility() {
+      const cell = getActiveTableCell();
+      document.getElementById('table-tools-bar').style.display = cell && editorEl.contains(cell) ? 'flex' : 'none';
+    }
+
+    function tableAddRow() {
+      const cell = getActiveTableCell();
+      if (!cell) return;
+      const tr = cell.parentElement;
+      const table = tr.closest('table');
+      const colCount = tr.children.length;
+      const newTr = document.createElement('tr');
+      for (let i = 0; i < colCount; i++) {
+        const td = document.createElement('td');
+        td.textContent = '內容';
+        newTr.appendChild(td);
+      }
+      if (tr.parentElement.tagName === 'THEAD') {
+        const tbody = table.querySelector('tbody') || table;
+        tbody.insertBefore(newTr, tbody.firstChild);
+      } else {
+        tr.after(newTr);
+      }
+    }
+
+    function tableAddCol() {
+      const cell = getActiveTableCell();
+      if (!cell) return;
+      const colIdx = Array.from(cell.parentElement.children).indexOf(cell);
+      const table = cell.closest('table');
+      table.querySelectorAll('tr').forEach(tr => {
+        const isHeader = tr.parentElement.tagName === 'THEAD';
+        const newCell = document.createElement(isHeader ? 'th' : 'td');
+        newCell.textContent = isHeader ? '新標題' : '內容';
+        const refCell = tr.children[colIdx];
+        if (refCell) refCell.after(newCell);
+        else tr.appendChild(newCell);
+      });
+    }
+
+    function tableDelRow() {
+      const cell = getActiveTableCell();
+      if (!cell) return;
+      const tr = cell.parentElement;
+      const table = tr.closest('table');
+      if (table.querySelectorAll('tr').length <= 1) {
+        table.remove();
+      } else {
+        tr.remove();
+      }
+      updateTableToolbarVisibility();
+    }
+
+    function tableDelCol() {
+      const cell = getActiveTableCell();
+      if (!cell) return;
+      const tr = cell.parentElement;
+      const table = tr.closest('table');
+      if (tr.children.length <= 1) {
+        table.remove();
+      } else {
+        const colIdx = Array.from(tr.children).indexOf(cell);
+        table.querySelectorAll('tr').forEach(row => {
+          if (row.children[colIdx]) row.children[colIdx].remove();
+        });
+      }
+      updateTableToolbarVisibility();
+    }
+
+    function closeMiniModal(id) {
+      document.getElementById(id).style.display = 'none';
+    }
+
+    // === 加密 / 解密與 Base64 工具 ===
+    function isValidBase64(str) {
+      if (!str || typeof str !== 'string') return false;
+      const clean = str.trim();
+      if (clean.length < 40 || clean.length % 4 !== 0) return false;
+      return /^[A-Za-z0-9+/]+={0,2}$/.test(clean);
+    }
+
     function bufToB64(buf) {
       const bytes = new Uint8Array(buf);
       let bin = '';
       for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
       return btoa(bin);
     }
+
     function b64ToBuf(b64) {
-      const bin = atob(b64);
+      const clean = b64.trim();
+      if (!isValidBase64(clean)) throw new Error('加密金鑰格式無效，請點下方「重新設定」');
+      const bin = atob(clean);
       const bytes = new Uint8Array(bin.length);
       for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
       return bytes;
     }
+
+    function utf8ToB64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let bin = '';
+      for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+
+    function b64ToUtf8(b64) {
+      const clean = b64.replace(/\s/g, '');
+      const bin = atob(clean);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return new TextDecoder().decode(bytes);
+    }
+
     async function deriveKey(password, salt) {
       const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
       return crypto.subtle.deriveKey(
@@ -192,6 +526,7 @@
         ['encrypt', 'decrypt']
       );
     }
+
     async function encryptToken(token, password) {
       const salt = crypto.getRandomValues(new Uint8Array(16));
       const iv = crypto.getRandomValues(new Uint8Array(12));
@@ -203,6 +538,7 @@
       combined.set(new Uint8Array(cipher), 28);
       return bufToB64(combined);
     }
+
     async function decryptToken(encryptedB64, password) {
       const combined = b64ToBuf(encryptedB64);
       const salt = combined.slice(0, 16);
@@ -213,7 +549,7 @@
       return new TextDecoder().decode(plainBuf);
     }
 
-    // === 頁面狀態控制 ===
+    // === 頁面狀態與驗證控制（直接讀取 data.json 與 localStorage 裡的原密碼設定） ===
     function showView(viewId) {
       ['setup-view', 'login-view', 'dashboard-view'].forEach(id => {
         document.getElementById(id).style.display = id === viewId ? 'block' : 'none';
@@ -221,22 +557,59 @@
       document.getElementById('logout-btn').style.display = viewId === 'dashboard-view' ? 'inline-block' : 'none';
     }
 
-    function initAuth() {
-      const saved = sessionStorage.getItem('gh_unlocked_token');
-      if (saved) {
-        activeToken = saved;
+    async function initAuth() {
+      let localAuth = null;
+      try {
+        localAuth = JSON.parse(localStorage.getItem(CACHE_KEY) || 'null');
+      } catch (e) {}
+
+      let remoteData = null;
+      try {
+        const res = await fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' });
+        if (res.ok) remoteData = await res.json();
+      } catch (e) {}
+
+      const remoteValid = remoteData && isValidBase64(remoteData.encryptedToken);
+      const localValid = localAuth && isValidBase64(localAuth.encryptedToken);
+
+      if (remoteValid && localValid) {
+        if ((remoteData.encryptedUpdatedAt || 0) >= (localAuth.encryptedUpdatedAt || 0)) {
+          currentEncryptedToken = remoteData.encryptedToken.trim();
+          localStorage.setItem(CACHE_KEY, JSON.stringify({
+            encryptedToken: currentEncryptedToken,
+            encryptedUpdatedAt: remoteData.encryptedUpdatedAt || Date.now()
+          }));
+        } else {
+          currentEncryptedToken = localAuth.encryptedToken.trim();
+        }
+      } else if (remoteValid) {
+        currentEncryptedToken = remoteData.encryptedToken.trim();
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          encryptedToken: currentEncryptedToken,
+          encryptedUpdatedAt: remoteData.encryptedUpdatedAt || Date.now()
+        }));
+      } else if (localValid) {
+        currentEncryptedToken = localAuth.encryptedToken.trim();
+      }
+
+      const sessionToken = sessionStorage.getItem('gh_unlocked_token');
+      if (sessionToken) {
+        activeToken = sessionToken;
         enterDashboard();
         return;
       }
-      if (ENCRYPTED_TOKEN === "__ENCRYPTED_TOKEN_PLACEHOLDER__" || !ENCRYPTED_TOKEN) {
-        showView('setup-view');
-      } else {
+
+      if (isValidBase64(currentEncryptedToken)) {
         showView('login-view');
+      } else {
+        showView('setup-view');
       }
     }
 
     function switchToReset() {
-      document.getElementById('back-to-login-link').style.display = 'inline-block';
+      if (isValidBase64(currentEncryptedToken)) {
+        document.getElementById('back-to-login-link').style.display = 'inline-block';
+      }
       showView('setup-view');
     }
 
@@ -252,7 +625,7 @@
 
       btn.disabled = true;
       statusEl.style.color = '#2563eb';
-      statusEl.textContent = '正在驗證 Token 並寫入加密設定...';
+      statusEl.textContent = '正在驗證 Token 並儲存密碼設定...';
 
       try {
         const repoRes = await fetch(API_BASE, { headers: { 'Authorization': `Bearer ${token}` } });
@@ -262,34 +635,42 @@
         }
 
         const encryptedStr = await encryptToken(token, pwd);
+        const now = Date.now();
+        currentEncryptedToken = encryptedStr;
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          encryptedToken: encryptedStr,
+          encryptedUpdatedAt: now
+        }));
 
-        const fileRes = await fetch(`${API_BASE}/contents/admin.html?ref=${CONFIG.branch}&t=${Date.now()}`, {
+        const fileRes = await fetch(`${API_BASE}/contents/data.json?ref=${CONFIG.branch}&t=${Date.now()}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const fileMeta = await fileRes.json();
-        const bin = atob(fileMeta.content.replace(/\s/g, ''));
-        const bytes = new Uint8Array(bin.length);
-        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-        let htmlText = new TextDecoder().decode(bytes);
+        const existingData = JSON.parse(b64ToUtf8(fileMeta.content));
 
-        htmlText = htmlText.replace(/const ENCRYPTED_TOKEN = ".*?";/, `const ENCRYPTED_TOKEN = "${encryptedStr}";`);
+        existingData.encryptedToken = encryptedStr;
+        existingData.encryptedUpdatedAt = now;
+        if (!Array.isArray(existingData.categories)) existingData.categories = [];
+        if (!Array.isArray(existingData.posts)) existingData.posts = [];
 
-        const putRes = await fetch(`${API_BASE}/contents/admin.html`, {
+        const putRes = await fetch(`${API_BASE}/contents/data.json`, {
           method: 'PUT',
           headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            message: 'Configure encrypted admin password',
-            content: utf8ToB64(htmlText),
+            message: 'Save encrypted admin token',
+            content: utf8ToB64(JSON.stringify(existingData, null, 2)),
             sha: fileMeta.sha,
             branch: CONFIG.branch
           })
         });
-        if (!putRes.ok) throw new Error('寫入 admin.html 失敗');
+        if (!putRes.ok) throw new Error('寫入 data.json 失敗');
 
         activeToken = token;
+        siteData = existingData;
         sessionStorage.setItem('gh_unlocked_token', token);
-        showToast('密碼綁定成功！約 1 分鐘後部署完成即可用自訂密碼登入。');
-        enterDashboard();
+        statusEl.textContent = '';
+        showToast('密碼設定成功！之後直接輸入自訂密碼即可登入。');
+        enterDashboard(true);
       } catch (err) {
         statusEl.style.color = '#dc2626';
         statusEl.textContent = `設定失敗：${err.message}`;
@@ -309,9 +690,9 @@
       statusEl.textContent = '正在驗證密碼...';
 
       try {
-        const token = await decryptToken(ENCRYPTED_TOKEN, pwd);
+        const token = await decryptToken(currentEncryptedToken, pwd);
         const res = await fetch(API_BASE, { headers: { 'Authorization': `Bearer ${token}` } });
-        if (!res.ok) throw new Error('Token 已失效，請點下方重新設定');
+        if (!res.ok) throw new Error('Token 已失效，請點下方「重新設定」');
 
         activeToken = token;
         sessionStorage.setItem('gh_unlocked_token', token);
@@ -333,14 +714,30 @@
     }
 
     // === 後台資料讀寫 ===
-    async function enterDashboard() {
+    async function enterDashboard(skipFetch = false) {
       showView('dashboard-view');
-      await loadSiteData();
+      if (skipFetch) {
+        syncFormFromData();
+      } else {
+        await loadSiteData();
+      }
     }
 
     async function loadSiteData() {
-      const res = await fetch(`./data.json?t=${Date.now()}`);
-      siteData = await res.json();
+      try {
+        const res = await fetch(`${API_BASE}/contents/data.json?ref=${CONFIG.branch}&t=${Date.now()}`, {
+          headers: { 'Authorization': `Bearer ${activeToken}` }
+        });
+        const meta = await res.json();
+        siteData = JSON.parse(b64ToUtf8(meta.content));
+      } catch (e) {
+        const res = await fetch(`./data.json?t=${Date.now()}`, { cache: 'no-store' });
+        siteData = await res.json();
+      }
+      syncFormFromData();
+    }
+
+    function syncFormFromData() {
       document.getElementById('cfg-title').value = siteData.siteTitle || '';
       document.getElementById('cfg-subtitle').value = siteData.siteSubtitle || '';
       renderAdminCategories();
@@ -352,6 +749,15 @@
         headers: { 'Authorization': `Bearer ${activeToken}` }
       });
       const meta = await getRes.json();
+      const latestRemote = JSON.parse(b64ToUtf8(meta.content));
+
+      // 確保加密金鑰不會在儲存文章時遺失
+      if (!siteData.encryptedToken) {
+        siteData.encryptedToken = latestRemote.encryptedToken || currentEncryptedToken || '';
+      }
+      if (!siteData.encryptedUpdatedAt && latestRemote.encryptedUpdatedAt) {
+        siteData.encryptedUpdatedAt = latestRemote.encryptedUpdatedAt;
+      }
 
       const putRes = await fetch(`${API_BASE}/contents/data.json`, {
         method: 'PUT',
@@ -364,7 +770,7 @@
         })
       });
       if (!putRes.ok) throw new Error('儲存資料失敗');
-      showToast('已成功儲存至 GitHub！（約 30 秒～1 分鐘更新至前台）');
+      showToast('已成功儲存！（首頁約 30 秒～1 分鐘完成更新）');
     }
 
     async function saveSiteInfo() {
@@ -412,12 +818,14 @@
       const editId = document.getElementById('edit-post-id').value;
       const category = document.getElementById('post-category').value;
       const title = document.getElementById('post-title').value.trim();
-      const content = document.getElementById('post-content').value.trim();
+      const contentHtml = editorEl.innerHTML.trim();
+      const plainText = editorEl.textContent.trim();
+      const hasTable = editorEl.querySelector('table') !== null;
       const linkText = document.getElementById('post-link-text').value.trim();
       const linkUrl = document.getElementById('post-link-url').value.trim();
       const fileInput = document.getElementById('post-image');
 
-      if (!title || !content) { alert('請填寫文章標題與內容！'); return; }
+      if (!title || (!plainText && !hasTable)) { alert('請填寫文章標題與內容！'); return; }
 
       btn.disabled = true;
       btn.textContent = '處理中...';
@@ -444,13 +852,13 @@
         }
 
         if (existingPost) {
-          Object.assign(existingPost, { category, title, content, imageUrl, linkText, linkUrl });
+          Object.assign(existingPost, { category, title, content: contentHtml, imageUrl, linkText, linkUrl });
           await commitDataJson(`Edit post: ${title}`);
         } else {
           const today = new Date().toISOString().split('T')[0];
           siteData.posts.unshift({
             id: 'post_' + Date.now(),
-            category, title, content, imageUrl, linkText, linkUrl,
+            category, title, content: contentHtml, imageUrl, linkText, linkUrl,
             createdAt: today
           });
           await commitDataJson(`Publish post: ${title}`);
@@ -473,7 +881,11 @@
       document.getElementById('editor-heading').textContent = '編輯文章';
       document.getElementById('post-category').value = post.category || '';
       document.getElementById('post-title').value = post.title;
-      document.getElementById('post-content').value = post.content;
+
+      const raw = String(post.content || '');
+      const hasHtmlTag = /<(p|div|br|b|strong|i|em|u|s|strike|h[1-6]|ul|ol|li|span|font|a|table)\b/i.test(raw);
+      editorEl.innerHTML = hasHtmlTag ? raw : escapeHtml(raw).replace(/\n/g, '<br>');
+
       document.getElementById('post-link-text').value = post.linkText || '';
       document.getElementById('post-link-url').value = post.linkUrl || '';
       document.getElementById('remove-image-chk').checked = false;
@@ -487,7 +899,8 @@
       document.getElementById('edit-post-id').value = '';
       document.getElementById('editor-heading').textContent = '發布新文章';
       document.getElementById('post-title').value = '';
-      document.getElementById('post-content').value = '';
+      editorEl.innerHTML = '';
+      document.getElementById('table-tools-bar').style.display = 'none';
       document.getElementById('post-link-text').value = '';
       document.getElementById('post-link-url').value = '';
       document.getElementById('post-image').value = '';
@@ -542,13 +955,6 @@
         img.onerror = reject;
         img.src = URL.createObjectURL(file);
       });
-    }
-
-    function utf8ToB64(str) {
-      const bytes = new TextEncoder().encode(str);
-      let bin = '';
-      for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
-      return btoa(bin);
     }
 
     function escapeHtml(str) {
