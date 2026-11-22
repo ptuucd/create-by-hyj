@@ -19,24 +19,40 @@
     .cat-btn:hover { border-color: var(--primary); color: var(--primary); }
     .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     .post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 22px; }
-    .post-card { background: var(--card); border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.2s; }
-    .post-card:hover { transform: translateY(-3px); }
+    .post-card { background: var(--card); border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.2s, box-shadow 0.2s; cursor: pointer; }
+    .post-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(15,23,42,0.08); }
     .post-card img { width: 100%; height: 190px; object-fit: cover; background: #e2e8f0; }
     .post-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
     .post-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 12px; min-height: 22px; }
     .badge { background: #dbeafe; color: #1d4ed8; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
     .date { color: var(--muted); }
-    .post-title { margin: 0 0 10px; font-size: 18px; line-height: 1.4; }
-    .post-content { margin: 0 0 16px; color: #475569; font-size: 14px; white-space: pre-line; flex: 1; }
-    .post-actions { display: flex; gap: 10px; margin-top: auto; }
-    .btn { display: inline-block; background: var(--primary); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; text-align: center; }
+    .post-title { margin: 0 0 10px; font-size: 18px; line-height: 1.4; color: #0f172a; }
+    .post-excerpt { margin: 0 0 16px; color: #475569; font-size: 14px; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .post-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+    .read-hint { color: var(--primary); font-size: 13px; font-weight: 600; }
+    .btn { display: inline-block; background: var(--primary); color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; }
     .btn:hover { background: #1d4ed8; }
-    .btn-outline { background: transparent; color: var(--primary); border: 1px solid #bfdbfe; }
     .empty-msg { text-align: center; color: var(--muted); padding: 60px 0; grid-column: 1 / -1; font-size: 15px; }
-    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
-    .modal { background: #fff; max-width: 680px; width: 100%; max-height: 88vh; overflow-y: auto; border-radius: 14px; padding: 24px; position: relative; }
-    .modal img { width: 100%; max-height: 360px; object-fit: cover; border-radius: 8px; margin-bottom: 16px; }
-    .modal-close { position: sticky; top: 0; float: right; background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; }
+
+    /* 文章檢閱視窗 */
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.65); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+    .modal { background: #fff; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 16px; padding: 28px 32px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    .modal-close { position: sticky; top: 0; float: right; background: #f1f5f9; border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; color: #334155; z-index: 10; }
+    .modal-close:hover { background: #e2e8f0; }
+    .modal-cover { width: 100%; max-height: 400px; object-fit: cover; border-radius: 10px; margin: 16px 0; }
+    .modal-title { margin: 8px 0 12px; font-size: 24px; line-height: 1.35; color: #0f172a; }
+
+    /* 富文本內容排版（支援表格、顏色、超連結） */
+    .rich-content { color: #334155; font-size: 16px; line-height: 1.75; word-break: break-word; }
+    .rich-content h2 { font-size: 21px; margin: 20px 0 10px; color: #0f172a; }
+    .rich-content h3 { font-size: 18px; margin: 16px 0 8px; color: #1e293b; }
+    .rich-content p { margin: 0 0 12px; }
+    .rich-content ul, .rich-content ol { padding-left: 24px; margin: 0 0 14px; }
+    .rich-content a { color: #2563eb; text-decoration: underline; font-weight: 500; }
+    .rich-content a:hover { color: #1d4ed8; }
+    .rich-content table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 15px; overflow-x: auto; display: block; }
+    .rich-content th, .rich-content td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; min-width: 80px; }
+    .rich-content th { background: #f1f5f9; font-weight: 600; color: #0f172a; }
   </style>
 </head>
 <body>
@@ -58,7 +74,7 @@
 
   <div id="read-modal" class="modal-backdrop" onclick="if(event.target===this) closeModal()">
     <div class="modal">
-      <button class="modal-close" onclick="closeModal()">✕</button>
+      <button class="modal-close" onclick="closeModal()" title="關閉 (Esc)">✕</button>
       <div id="modal-content"></div>
     </div>
   </div>
@@ -99,6 +115,34 @@
       renderPosts();
     }
 
+    function getPlainExcerpt(raw) {
+      const div = document.createElement('div');
+      div.innerHTML = String(raw || '');
+      const text = (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
+      return text.length > 100 ? text.slice(0, 100) + '...' : text;
+    }
+
+    function formatRichContent(raw) {
+      const str = String(raw || '');
+      const hasHtmlTag = /<(p|div|br|b|strong|i|em|u|s|strike|h[1-6]|ul|ol|li|span|font|a|table|tr|td|th|blockquote)\b/i.test(str);
+      if (!hasHtmlTag) {
+        return escapeHtml(str).replace(/\n/g, '<br>');
+      }
+      const doc = new DOMParser().parseFromString(str, 'text/html');
+      doc.querySelectorAll('script, style, iframe, object, embed').forEach(el => el.remove());
+      doc.querySelectorAll('*').forEach(el => {
+        [...el.attributes].forEach(attr => {
+          if (attr.name.startsWith('on')) el.removeAttribute(attr.name);
+          if (attr.name === 'href' && /^\s*javascript:/i.test(attr.value)) el.removeAttribute('href');
+        });
+        if (el.tagName === 'A') {
+          el.setAttribute('target', '_blank');
+          el.setAttribute('rel', 'noopener noreferrer');
+        }
+      });
+      return doc.body.innerHTML;
+    }
+
     function renderPosts() {
       const grid = document.getElementById('post-grid');
       const filtered = (siteData.posts || []).filter(p => currentCategory === 'ALL' || p.category === currentCategory);
@@ -109,10 +153,9 @@
       }
 
       grid.innerHTML = filtered.map(post => {
-        const isLong = (post.content || '').length > 110;
-        const previewText = isLong ? post.content.slice(0, 110) + '...' : (post.content || '');
+        const excerpt = getPlainExcerpt(post.content);
         return `
-          <article class="post-card">
+          <article class="post-card" onclick="openModal('${escapeJs(post.id)}')">
             ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="文章圖片" loading="lazy" />` : ''}
             <div class="post-body">
               <div class="post-meta">
@@ -120,10 +163,10 @@
                 <span class="date">${escapeHtml(post.createdAt || '')}</span>
               </div>
               <h2 class="post-title">${escapeHtml(post.title)}</h2>
-              <p class="post-content">${escapeHtml(previewText)}</p>
-              <div class="post-actions">
-                ${isLong ? `<button class="btn btn-outline" onclick="openModal('${escapeJs(post.id)}')">閱讀全文</button>` : ''}
-                ${post.linkUrl ? `<a class="btn" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener">${escapeHtml(post.linkText || '前往連結')}</a>` : ''}
+              <p class="post-excerpt">${escapeHtml(excerpt)}</p>
+              <div class="post-footer">
+                <span class="read-hint">點開檢閱全文 →</span>
+                ${post.linkUrl ? `<a class="btn" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(post.linkText || '前往連結')}</a>` : ''}
               </div>
             </div>
           </article>
@@ -135,21 +178,27 @@
       const post = siteData.posts.find(p => p.id === postId);
       if (!post) return;
       document.getElementById('modal-content').innerHTML = `
-        <div class="post-meta" style="margin-bottom:12px;">
+        <div class="post-meta">
           ${post.category ? `<span class="badge">${escapeHtml(post.category)}</span>` : '<span></span>'}
           <span class="date">${escapeHtml(post.createdAt || '')}</span>
         </div>
-        <h2 style="margin-top:0;">${escapeHtml(post.title)}</h2>
-        ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="文章圖片" />` : ''}
-        <p style="white-space:pre-line; color:#334155;">${escapeHtml(post.content)}</p>
-        ${post.linkUrl ? `<a class="btn" style="margin-top:16px;" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener">${escapeHtml(post.linkText || '前往連結')}</a>` : ''}
+        <h2 class="modal-title">${escapeHtml(post.title)}</h2>
+        ${post.imageUrl ? `<img class="modal-cover" src="${escapeHtml(post.imageUrl)}" alt="文章圖片" />` : ''}
+        <div class="rich-content">${formatRichContent(post.content)}</div>
+        ${post.linkUrl ? `<div style="margin-top:24px; padding-top:16px; border-top:1px solid #e2e8f0;"><a class="btn" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener">${escapeHtml(post.linkText || '前往連結')}</a></div>` : ''}
       `;
       document.getElementById('read-modal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
     }
 
     function closeModal() {
       document.getElementById('read-modal').style.display = 'none';
+      document.body.style.overflow = '';
     }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
 
     function escapeHtml(str) {
       return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
