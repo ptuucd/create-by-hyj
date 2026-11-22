@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的網站</title>
+  <style>
+    :root { --primary: #2563eb; --bg: #f8fafc; --card: #ffffff; --text: #1e293b; --muted: #64748b; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); margin: 0; line-height: 1.6; }
+    header { background: #0f172a; color: #fff; padding: 28px 20px; }
+    .header-inner { max-width: 960px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+    header h1 { margin: 0; font-size: 24px; }
+    header p { margin: 4px 0 0; color: #94a3b8; font-size: 14px; }
+    .admin-link { color: #e2e8f0; text-decoration: none; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; font-size: 14px; transition: 0.2s; }
+    .admin-link:hover { background: #1e293b; border-color: #64748b; }
+    .container { max-width: 960px; margin: 24px auto; padding: 0 20px; }
+    .category-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
+    .cat-btn { background: #fff; border: 1px solid #cbd5e1; color: var(--text); padding: 7px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; }
+    .cat-btn:hover { border-color: var(--primary); color: var(--primary); }
+    .cat-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .post-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); gap: 22px; }
+    .post-card { background: var(--card); border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: transform 0.2s; }
+    .post-card:hover { transform: translateY(-3px); }
+    .post-card img { width: 100%; height: 190px; object-fit: cover; background: #e2e8f0; }
+    .post-body { padding: 20px; flex: 1; display: flex; flex-direction: column; }
+    .post-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; font-size: 12px; min-height: 22px; }
+    .badge { background: #dbeafe; color: #1d4ed8; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+    .date { color: var(--muted); }
+    .post-title { margin: 0 0 10px; font-size: 18px; line-height: 1.4; }
+    .post-content { margin: 0 0 16px; color: #475569; font-size: 14px; white-space: pre-line; flex: 1; }
+    .post-actions { display: flex; gap: 10px; margin-top: auto; }
+    .btn { display: inline-block; background: var(--primary); color: #fff; text-decoration: none; padding: 8px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; text-align: center; }
+    .btn:hover { background: #1d4ed8; }
+    .btn-outline { background: transparent; color: var(--primary); border: 1px solid #bfdbfe; }
+    .empty-msg { text-align: center; color: var(--muted); padding: 60px 0; grid-column: 1 / -1; font-size: 15px; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.6); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
+    .modal { background: #fff; max-width: 680px; width: 100%; max-height: 88vh; overflow-y: auto; border-radius: 14px; padding: 24px; position: relative; }
+    .modal img { width: 100%; max-height: 360px; object-fit: cover; border-radius: 8px; margin-bottom: 16px; }
+    .modal-close { position: sticky; top: 0; float: right; background: #f1f5f9; border: none; border-radius: 50%; width: 32px; height: 32px; cursor: pointer; font-size: 16px; }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-inner">
+      <div>
+        <h1 id="site-title">我的網站</h1>
+        <p id="site-subtitle"></p>
+      </div>
+      <a href="./admin.html" class="admin-link">管理員登入</a>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="category-bar" class="category-bar"></div>
+    <div id="post-grid" class="post-grid"></div>
+  </main>
+
+  <div id="read-modal" class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal">
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <div id="modal-content"></div>
+    </div>
+  </div>
+
+  <script>
+    let siteData = { categories: [], posts: [] };
+    let currentCategory = 'ALL';
+
+    async function init() {
+      try {
+        const res = await fetch(`./data.json?t=${Date.now()}`);
+        siteData = await res.json();
+        document.title = siteData.siteTitle || '我的網站';
+        document.getElementById('site-title').textContent = siteData.siteTitle || '我的網站';
+        const subEl = document.getElementById('site-subtitle');
+        subEl.textContent = siteData.siteSubtitle || '';
+        subEl.style.display = siteData.siteSubtitle ? 'block' : 'none';
+        renderCategories();
+        renderPosts();
+      } catch (e) {
+        document.getElementById('post-grid').innerHTML = '<div class="empty-msg">無法載入資料，請確認 data.json 是否存在。</div>';
+      }
+    }
+
+    function renderCategories() {
+      const bar = document.getElementById('category-bar');
+      const allCats = ['ALL', ...(siteData.categories || [])];
+      bar.innerHTML = allCats.map(cat => `
+        <button class="cat-btn ${currentCategory === cat ? 'active' : ''}" onclick="selectCategory('${escapeJs(cat)}')">
+          ${cat === 'ALL' ? '首頁' : escapeHtml(cat)}
+        </button>
+      `).join('');
+    }
+
+    function selectCategory(cat) {
+      currentCategory = cat;
+      renderCategories();
+      renderPosts();
+    }
+
+    function renderPosts() {
+      const grid = document.getElementById('post-grid');
+      const filtered = (siteData.posts || []).filter(p => currentCategory === 'ALL' || p.category === currentCategory);
+
+      if (filtered.length === 0) {
+        grid.innerHTML = '<div class="empty-msg">目前尚無內容</div>';
+        return;
+      }
+
+      grid.innerHTML = filtered.map(post => {
+        const isLong = (post.content || '').length > 110;
+        const previewText = isLong ? post.content.slice(0, 110) + '...' : (post.content || '');
+        return `
+          <article class="post-card">
+            ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="文章圖片" loading="lazy" />` : ''}
+            <div class="post-body">
+              <div class="post-meta">
+                ${post.category ? `<span class="badge">${escapeHtml(post.category)}</span>` : '<span></span>'}
+                <span class="date">${escapeHtml(post.createdAt || '')}</span>
+              </div>
+              <h2 class="post-title">${escapeHtml(post.title)}</h2>
+              <p class="post-content">${escapeHtml(previewText)}</p>
+              <div class="post-actions">
+                ${isLong ? `<button class="btn btn-outline" onclick="openModal('${escapeJs(post.id)}')">閱讀全文</button>` : ''}
+                ${post.linkUrl ? `<a class="btn" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener">${escapeHtml(post.linkText || '前往連結')}</a>` : ''}
+              </div>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function openModal(postId) {
+      const post = siteData.posts.find(p => p.id === postId);
+      if (!post) return;
+      document.getElementById('modal-content').innerHTML = `
+        <div class="post-meta" style="margin-bottom:12px;">
+          ${post.category ? `<span class="badge">${escapeHtml(post.category)}</span>` : '<span></span>'}
+          <span class="date">${escapeHtml(post.createdAt || '')}</span>
+        </div>
+        <h2 style="margin-top:0;">${escapeHtml(post.title)}</h2>
+        ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="文章圖片" />` : ''}
+        <p style="white-space:pre-line; color:#334155;">${escapeHtml(post.content)}</p>
+        ${post.linkUrl ? `<a class="btn" style="margin-top:16px;" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener">${escapeHtml(post.linkText || '前往連結')}</a>` : ''}
+      `;
+      document.getElementById('read-modal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('read-modal').style.display = 'none';
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    init();
+  </script>
+</body>
+</html>
