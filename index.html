@@ -11,8 +11,12 @@
     .header-inner { max-width: 960px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
     header h1 { margin: 0; font-size: 24px; }
     header p { margin: 4px 0 0; color: #94a3b8; font-size: 14px; }
-    .admin-link { color: #e2e8f0; text-decoration: none; border: 1px solid #334155; padding: 8px 16px; border-radius: 8px; font-size: 14px; transition: 0.2s; }
-    .admin-link:hover { background: #1e293b; border-color: #64748b; }
+    .header-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    .header-btn { color: #e2e8f0; background: transparent; text-decoration: none; border: 1px solid #334155; padding: 8px 15px; border-radius: 8px; font-size: 14px; cursor: pointer; transition: 0.2s; font-family: inherit; }
+    .header-btn:hover { background: #1e293b; border-color: #64748b; }
+    .header-btn-accent { background: #1e293b; border-color: #475569; color: #fff; }
+    .header-btn-accent:hover { background: #334155; }
+
     .container { max-width: 960px; margin: 24px auto; padding: 0 20px; }
     .category-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; }
     .cat-btn { background: #fff; border: 1px solid #cbd5e1; color: var(--text); padding: 7px 16px; border-radius: 20px; cursor: pointer; font-size: 14px; font-weight: 500; transition: 0.2s; }
@@ -40,20 +44,29 @@
 
     .post-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid #f1f5f9; }
     .read-hint { color: var(--primary); font-size: 13px; font-weight: 600; }
-    .btn { display: inline-block; background: var(--primary); color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; }
+    .btn { display: inline-block; background: var(--primary); color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; font-family: inherit; }
     .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
     .empty-msg { text-align: center; color: var(--muted); padding: 60px 0; grid-column: 1 / -1; font-size: 15px; }
 
-    /* 文章檢閱視窗 */
+    /* 彈出視窗共用樣式 */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.65); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
     .modal { background: #fff; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 16px; padding: 28px 32px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    .modal-sm { max-width: 460px; padding: 24px 28px; }
     .modal .post-meta { padding-right: 44px; }
     .modal-close { position: sticky; top: 0; float: right; background: #f1f5f9; border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; color: #334155; z-index: 10; }
     .modal-close:hover { background: #e2e8f0; }
     .modal-cover { width: 100%; max-height: 400px; object-fit: cover; border-radius: 10px; margin: 16px 0; }
     .modal-title { margin: 8px 0 12px; font-size: 24px; line-height: 1.35; color: #0f172a; }
 
-    /* 富文本內容排版（支援表格、顏色、超連結） */
+    /* 匿名建議表單 */
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #475569; }
+    .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-family: inherit; }
+    .form-group textarea:focus, .form-group select:focus { outline: none; border-color: var(--primary); }
+    .sug-status { margin-top: 10px; font-size: 13px; font-weight: 500; }
+
+    /* 富文本內容排版 */
     .rich-content { color: #334155; font-size: 16px; line-height: 1.75; word-break: break-word; }
     .rich-content h2 { font-size: 21px; margin: 20px 0 10px; color: #0f172a; }
     .rich-content h3 { font-size: 18px; margin: 16px 0 8px; color: #1e293b; }
@@ -74,7 +87,10 @@
         <h1 id="site-title">我的網站</h1>
         <p id="site-subtitle"></p>
       </div>
-      <a href="./admin.html" class="admin-link">管理員登入</a>
+      <div class="header-actions">
+        <button type="button" class="header-btn header-btn-accent" onclick="openSuggestModal()">💬 給個小建議</button>
+        <a href="./admin.html" class="header-btn">管理員登入</a>
+      </div>
     </div>
   </header>
 
@@ -83,15 +99,40 @@
     <div id="post-grid" class="post-grid"></div>
   </main>
 
-  <div id="read-modal" class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+  <!-- 文章檢閱視窗 -->
+  <div id="read-modal" class="modal-backdrop" onclick="if(event.target===this) closeModal('read-modal')">
     <div class="modal">
-      <button class="modal-close" onclick="closeModal()" title="關閉 (Esc)">✕</button>
+      <button class="modal-close" onclick="closeModal('read-modal')" title="關閉 (Esc)">✕</button>
       <div id="modal-content"></div>
     </div>
   </div>
 
+  <!-- 匿名小建議視窗 -->
+  <div id="suggest-modal" class="modal-backdrop" onclick="if(event.target===this) closeModal('suggest-modal')">
+    <div class="modal modal-sm">
+      <button class="modal-close" onclick="closeModal('suggest-modal')" title="關閉">✕</button>
+      <h3 style="margin:0 0 6px; font-size:20px; color:#0f172a;">💬 匿名小建議</h3>
+      <p style="margin:0 0 16px; font-size:13px; color:#64748b;">完全匿名傳送，不會記錄你的帳號、姓名或任何個人資訊。</p>
+      <div class="form-group">
+        <label>建議類型</label>
+        <select id="sug-tag">
+          <option value="網站建議">網站功能 / 排版建議</option>
+          <option value="內容勘誤">內容錯誤回報</option>
+          <option value="主題許願">想看的主題 / 許願</option>
+          <option value="其他留言">其他匿名留言</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>想說的話或建議內容</label>
+        <textarea id="sug-content" rows="4" maxlength="1000" placeholder="請輸入你的建議或想法..."></textarea>
+      </div>
+      <button id="sug-submit-btn" class="btn" style="width:100%;" onclick="submitSuggestion()">匿名送出</button>
+      <div id="sug-status" class="sug-status"></div>
+    </div>
+  </div>
+
   <script>
-    let siteData = { categories: [], posts: [] };
+    let siteData = { categories: [], posts: [], suggestionApiUrl: '' };
     let currentCategory = 'ALL';
 
     async function init() {
@@ -157,7 +198,7 @@
       }
 
       grid.innerHTML = filtered.map(post => `
-        <article class="post-card" onclick="openModal('${escapeJs(post.id)}')">
+        <article class="post-card" onclick="openPostModal('${escapeJs(post.id)}')">
           ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="文章圖片" loading="lazy" />` : ''}
           <div class="post-body">
             <div class="post-meta">
@@ -175,7 +216,7 @@
       `).join('');
     }
 
-    function openModal(postId) {
+    function openPostModal(postId) {
       const post = siteData.posts.find(p => p.id === postId);
       if (!post) return;
       document.getElementById('modal-content').innerHTML = `
@@ -192,13 +233,68 @@
       document.body.style.overflow = 'hidden';
     }
 
-    function closeModal() {
-      document.getElementById('read-modal').style.display = 'none';
+    // === 匿名小建議功能 ===
+    function openSuggestModal() {
+      const statusEl = document.getElementById('sug-status');
+      statusEl.textContent = '';
+      document.getElementById('suggest-modal').style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('sug-content').focus(), 50);
+    }
+
+    async function submitSuggestion() {
+      const apiUrl = (siteData.suggestionApiUrl || '').trim();
+      const tag = document.getElementById('sug-tag').value;
+      const content = document.getElementById('sug-content').value.trim();
+      const statusEl = document.getElementById('sug-status');
+      const btn = document.getElementById('sug-submit-btn');
+
+      if (!apiUrl) {
+        statusEl.style.color = '#d97706';
+        statusEl.textContent = '管理員尚未完成建議箱設定，請稍後再試。';
+        return;
+      }
+      if (!content) {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = '請先輸入建議內容！';
+        return;
+      }
+
+      btn.disabled = true;
+      statusEl.style.color = '#2563eb';
+      statusEl.textContent = '正在匿名傳送中...';
+
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'add', tag, content })
+        });
+        const result = await res.json();
+        if (!result.ok) throw new Error(result.error || '傳送失敗');
+
+        document.getElementById('sug-content').value = '';
+        statusEl.style.color = '#16a34a';
+        statusEl.textContent = '已成功匿名送出！感謝你的建議。';
+        setTimeout(() => closeModal('suggest-modal'), 1400);
+      } catch (err) {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = '傳送發生錯誤，請確認網路連線後再試。';
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function closeModal(id) {
+      document.getElementById(id).style.display = 'none';
       document.body.style.overflow = '';
     }
 
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape') closeModal();
+      if (e.key === 'Escape') {
+        closeModal('read-modal');
+        closeModal('suggest-modal');
+      }
     });
 
     function escapeHtml(str) {
