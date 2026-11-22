@@ -12,7 +12,7 @@
     .auth-box h2 { margin-top: 0; font-size: 22px; }
     .dashboard { max-width: 920px; margin: 28px auto; padding: 0 20px; display: none; }
     .panel { background: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
-    .panel h3 { margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+    .panel h3 { margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; }
     .form-group { margin-bottom: 14px; }
     .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #475569; }
     input[type="text"], input[type="password"], input[type="url"], select {
@@ -36,6 +36,15 @@
     .link-switch { display: inline-block; margin-top: 14px; font-size: 13px; color: #2563eb; cursor: pointer; text-decoration: underline; }
     .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 100; }
 
+    /* 匿名小建議卡片樣式 */
+    .sug-card { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .sug-card:last-child { margin-bottom: 0; }
+    .sug-meta { font-size: 12px; color: #64748b; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; }
+    .sug-badge { background: #fef3c7; color: #92400e; padding: 2px 8px; border-radius: 10px; font-weight: 600; font-size: 11px; }
+    .sug-text { font-size: 14px; color: #1e293b; white-space: pre-line; word-break: break-word; }
+    .sug-config-box { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 14px; margin-top: 14px; font-size: 13px; }
+    .key-pill { font-family: monospace; background: #e2e8f0; padding: 4px 8px; border-radius: 5px; font-size: 12px; user-select: all; }
+
     /* Word 風格富文本編輯器 */
     .editor-wrapper { border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #fff; }
     .editor-toolbar { display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; background: #f8fafc; border-bottom: 1px solid #cbd5e1; align-items: center; }
@@ -45,13 +54,10 @@
     .tb-btn { background: #fff; border: 1px solid #cbd5e1; color: #1e293b; border-radius: 5px; padding: 4px 8px; font-size: 13px; cursor: pointer; min-width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; }
     .tb-btn:hover { background: #e2e8f0; }
     .tb-select { padding: 3px 6px; font-size: 13px; border: 1px solid #cbd5e1; border-radius: 5px; height: 28px; background: #fff; cursor: pointer; width: auto; }
-    
-    /* 顏色色塊與自訂調色盤 */
     .swatch-btn { width: 20px; height: 20px; border-radius: 4px; border: 1px solid #94a3b8; cursor: pointer; padding: 0; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; transition: transform 0.1s; }
     .swatch-btn:hover { transform: scale(1.15); border-color: #0f172a; }
     .color-picker-wrap { display: inline-flex; align-items: center; gap: 2px; background: #fff; border: 1px solid #cbd5e1; border-radius: 5px; padding: 1px 5px; height: 24px; font-size: 11px; color: #475569; cursor: pointer; }
     .color-picker-wrap input[type="color"] { border: none; width: 18px; height: 18px; padding: 0; background: none; cursor: pointer; }
-
     .table-tools { display: flex; flex-wrap: wrap; gap: 6px; padding: 6px 10px; background: #eff6ff; border-bottom: 1px solid #bfdbfe; font-size: 12px; align-items: center; }
     .table-tools button { background: #fff; border: 1px solid #93c5fd; color: #1d4ed8; border-radius: 4px; padding: 2px 8px; cursor: pointer; font-size: 12px; }
     .table-tools button:hover { background: #dbeafe; }
@@ -62,7 +68,6 @@
     .rich-editor-area th, .rich-editor-area td { border: 1px solid #94a3b8; padding: 8px 10px; min-width: 60px; }
     .rich-editor-area th { background: #f1f5f9; font-weight: 600; }
 
-    /* 插入連結 / 表格小彈窗 */
     .mini-modal-bg { position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: none; align-items: center; justify-content: center; z-index: 90; padding: 16px; }
     .mini-modal { background: #fff; padding: 20px 24px; border-radius: 12px; width: 100%; max-width: 360px; box-shadow: 0 12px 30px rgba(0,0,0,0.18); }
     .mini-modal h4 { margin: 0 0 14px; font-size: 16px; }
@@ -113,6 +118,35 @@
 
   <!-- 3. 管理後台主介面 -->
   <div id="dashboard-view" class="dashboard">
+
+    <!-- 匿名小建議信箱 -->
+    <div class="panel">
+      <h3>
+        <span>💬 匿名小建議信箱 <span id="sug-count-badge" class="sug-badge" style="font-size:12px; margin-left:4px;">0</span></span>
+        <button type="button" class="btn btn-sm btn-secondary" onclick="loadSuggestions()">重新整理</button>
+      </h3>
+      <div id="suggestion-list">
+        <p style="color:#64748b; font-size:14px; margin:0;">載入中...</p>
+      </div>
+
+      <details id="sug-settings-details" style="margin-top:16px;">
+        <summary style="cursor:pointer; font-size:13px; font-weight:600; color:#2563eb;">⚙️ 建議箱接收設定（首次啟用請展開設定）</summary>
+        <div class="sug-config-box">
+          <div style="margin-bottom:10px;">
+            <strong>1. 你的專屬讀取密鑰：</strong>
+            <span id="admin-sug-key" class="key-pill">計算中...</span>
+            <button type="button" class="btn btn-sm btn-secondary" style="margin-left:6px;" onclick="copySugKey()">複製密鑰</button>
+          </div>
+          <div class="form-group" style="margin-bottom:8px;">
+            <label>2. 貼上 Google Apps Script 網頁應用程式網址</label>
+            <div style="display:flex; gap:8px;">
+              <input type="url" id="cfg-sug-url" placeholder="https://script.google.com/macros/s/.../exec" />
+              <button type="button" class="btn btn-sm" style="flex-shrink:0;" onclick="saveSuggestionUrl()">儲存網址</button>
+            </div>
+          </div>
+        </div>
+      </details>
+    </div>
     
     <!-- 網站標題與分類管理 -->
     <div class="panel">
@@ -165,7 +199,6 @@
         <label>文章內容（先反白選取文字，再點選上方格式或顏色）</label>
         <div class="editor-wrapper">
           <div class="editor-toolbar">
-            <!-- 段落與文字樣式 -->
             <div class="tb-group">
               <select class="tb-select" onchange="execFormatBlock(this.value); this.value='';" title="段落樣式">
                 <option value="">段落樣式</option>
@@ -179,7 +212,6 @@
               <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('strikeThrough')" title="刪除線"><s>S</s></button>
             </div>
 
-            <!-- 文字顏色（一鍵常用色 + 自訂色） -->
             <div class="tb-group">
               <span class="tb-label">字色:</span>
               <button type="button" class="swatch-btn" style="background:#dc2626;" onmousedown="event.preventDefault()" onclick="execCmd('foreColor', '#dc2626')" title="紅色字"></button>
@@ -194,7 +226,6 @@
               </label>
             </div>
 
-            <!-- 螢光底色 -->
             <div class="tb-group">
               <span class="tb-label">底色:</span>
               <button type="button" class="swatch-btn" style="background:#fef08a;" onmousedown="event.preventDefault()" onclick="execCmd('hiliteColor', '#fef08a')" title="黃色螢光底"></button>
@@ -207,7 +238,6 @@
               </label>
             </div>
 
-            <!-- 對齊與清單 -->
             <div class="tb-group">
               <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('justifyLeft')" title="靠左對齊">≡左</button>
               <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('justifyCenter')" title="置中對齊">≡中</button>
@@ -216,7 +246,6 @@
               <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="execCmd('insertOrderedList')" title="編號清單">1. 清單</button>
             </div>
 
-            <!-- 連結、表格與清除格式 -->
             <div class="tb-group">
               <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="openLinkModal()" title="在文中插入超連結">🔗 插入連結</button>
               <button type="button" class="tb-btn" onmousedown="event.preventDefault()" onclick="openTableModal()" title="插入表格">📊 插入表格</button>
@@ -235,7 +264,6 @@
         </div>
       </div>
 
-      <!-- 保留舊版文末單一按鈕欄位（選填，相容舊資料） -->
       <details style="margin-bottom:16px; font-size:13px; color:#64748b;">
         <summary style="cursor:pointer; font-weight:600;">文末獨立按鈕連結（選填，亦可直接在上方內文插入多個連結）</summary>
         <div class="row" style="margin-top:10px;">
@@ -315,7 +343,8 @@
 
     let activeToken = '';
     let currentEncryptedToken = '';
-    let siteData = { siteTitle: '我的網站', siteSubtitle: '', encryptedToken: '', encryptedUpdatedAt: 0, categories: [], posts: [] };
+    let suggestionReadKey = '';
+    let siteData = { siteTitle: '我的網站', siteSubtitle: '', suggestionApiUrl: '', encryptedToken: '', encryptedUpdatedAt: 0, categories: [], posts: [] };
     let savedRange = null;
 
     // === 富文本編輯器游標與指令控制 ===
@@ -341,7 +370,6 @@
       }
     }
 
-    // 即時追蹤編輯器內的文字選取狀態（避免開啟調色盤後遺失選區）
     document.addEventListener('selectionchange', () => {
       if (document.activeElement === editorEl) {
         saveSelection();
@@ -553,6 +581,11 @@
       return new TextDecoder().decode(bytes);
     }
 
+    async function computeSuggestionKey(token) {
+      const digest = await crypto.subtle.digest('SHA-256', new TextEncoder().encode('sug_' + token));
+      return Array.from(new Uint8Array(digest)).slice(0, 10).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
     async function deriveKey(password, salt) {
       const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
       return crypto.subtle.deriveKey(
@@ -753,6 +786,9 @@
     // === 後台資料讀寫 ===
     async function enterDashboard(skipFetch = false) {
       showView('dashboard-view');
+      suggestionReadKey = await computeSuggestionKey(activeToken);
+      document.getElementById('admin-sug-key').textContent = suggestionReadKey;
+
       if (skipFetch) {
         syncFormFromData();
       } else {
@@ -777,8 +813,13 @@
     function syncFormFromData() {
       document.getElementById('cfg-title').value = siteData.siteTitle || '';
       document.getElementById('cfg-subtitle').value = siteData.siteSubtitle || '';
+      document.getElementById('cfg-sug-url').value = siteData.suggestionApiUrl || '';
+      if (!siteData.suggestionApiUrl) {
+        document.getElementById('sug-settings-details').open = true;
+      }
       renderAdminCategories();
       renderAdminPosts();
+      loadSuggestions();
     }
 
     async function commitDataJson(commitMsg) {
@@ -807,6 +848,79 @@
       });
       if (!putRes.ok) throw new Error('儲存資料失敗');
       showToast('已成功儲存！（首頁約 30 秒～1 分鐘完成更新）');
+    }
+
+    // === 匿名小建議讀取與管理 ===
+    function copySugKey() {
+      navigator.clipboard.writeText(suggestionReadKey);
+      showToast('已複製專屬讀取密鑰！');
+    }
+
+    async function saveSuggestionUrl() {
+      const url = document.getElementById('cfg-sug-url').value.trim();
+      siteData.suggestionApiUrl = url;
+      await commitDataJson('Update suggestion API URL');
+      loadSuggestions();
+    }
+
+    async function loadSuggestions() {
+      const listEl = document.getElementById('suggestion-list');
+      const badgeEl = document.getElementById('sug-count-badge');
+      const apiUrl = (siteData.suggestionApiUrl || '').trim();
+
+      if (!apiUrl) {
+        badgeEl.textContent = '0';
+        listEl.innerHTML = '<p style="color:#64748b; font-size:13px; margin:0;">尚未設定建議箱網址，請展開下方「⚙️ 建議箱接收設定」完成綁定。</p>';
+        return;
+      }
+
+      listEl.innerHTML = '<p style="color:#64748b; font-size:13px; margin:0;">正在讀取匿名小建議...</p>';
+      try {
+        const sep = apiUrl.includes('?') ? '&' : '?';
+        const res = await fetch(`${apiUrl}${sep}key=${encodeURIComponent(suggestionReadKey)}&t=${Date.now()}`);
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || '密鑰不符或讀取失敗');
+
+        const items = data.items || [];
+        badgeEl.textContent = items.length;
+        if (items.length === 0) {
+          listEl.innerHTML = '<p style="color:#64748b; font-size:14px; margin:0;">目前還沒有收到任何匿名小建議。</p>';
+          return;
+        }
+
+        listEl.innerHTML = items.map(item => `
+          <div class="sug-card" id="sug-card-${escapeHtml(item.id)}">
+            <div style="flex:1;">
+              <div class="sug-meta">
+                <span class="sug-badge">${escapeHtml(item.tag)}</span>
+                <span>${escapeHtml(item.createdAt)}</span>
+              </div>
+              <div class="sug-text">${escapeHtml(item.content)}</div>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger" style="flex-shrink:0;" onclick="deleteSuggestion('${escapeJs(item.id)}')">刪除</button>
+          </div>
+        `).join('');
+      } catch (err) {
+        listEl.innerHTML = `<p style="color:#dc2626; font-size:13px; margin:0;">讀取失敗：${escapeHtml(err.message)}</p>`;
+      }
+    }
+
+    async function deleteSuggestion(id) {
+      if (!confirm('確定要刪除這則小建議嗎？')) return;
+      const apiUrl = (siteData.suggestionApiUrl || '').trim();
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'delete', key: suggestionReadKey, id })
+        });
+        const data = await res.json();
+        if (!data.ok) throw new Error(data.error || '刪除失敗');
+        showToast('已刪除該則建議');
+        loadSuggestions();
+      } catch (err) {
+        alert('刪除失敗：' + err.message);
+      }
     }
 
     async function saveSiteInfo() {
