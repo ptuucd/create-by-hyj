@@ -27,7 +27,17 @@
     .badge { background: #dbeafe; color: #1d4ed8; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
     .date { color: var(--muted); }
     .post-title { margin: 0 0 10px; font-size: 18px; line-height: 1.4; color: #0f172a; }
-    .post-excerpt { margin: 0 0 16px; color: #475569; font-size: 14px; flex: 1; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+    /* 首頁卡片摘要（保留文字顏色、螢光底色、粗體與連結） */
+    .post-excerpt { margin: 0 0 16px; color: #475569; font-size: 14px; line-height: 1.65; max-height: 98px; overflow: hidden; word-break: break-word; flex: 1; }
+    .post-excerpt p, .post-excerpt div { margin: 0 0 4px; }
+    .post-excerpt h2, .post-excerpt h3 { font-size: 15px; margin: 0 0 4px; color: #0f172a; }
+    .post-excerpt ul, .post-excerpt ol { padding-left: 18px; margin: 0 0 4px; }
+    .post-excerpt a { color: #2563eb; text-decoration: underline; }
+    .post-excerpt table { width: 100%; border-collapse: collapse; margin: 4px 0; font-size: 12px; }
+    .post-excerpt th, .post-excerpt td { border: 1px solid #cbd5e1; padding: 3px 6px; }
+    .post-excerpt th { background: #f1f5f9; }
+
     .post-footer { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; padding-top: 12px; border-top: 1px solid #f1f5f9; }
     .read-hint { color: var(--primary); font-size: 13px; font-weight: 600; }
     .btn { display: inline-block; background: var(--primary); color: #fff; text-decoration: none; padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; }
@@ -37,6 +47,7 @@
     /* 文章檢閱視窗 */
     .modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.65); display: none; align-items: center; justify-content: center; padding: 20px; z-index: 50; }
     .modal { background: #fff; max-width: 800px; width: 100%; max-height: 90vh; overflow-y: auto; border-radius: 16px; padding: 28px 32px; position: relative; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+    .modal .post-meta { padding-right: 44px; }
     .modal-close { position: sticky; top: 0; float: right; background: #f1f5f9; border: none; border-radius: 50%; width: 34px; height: 34px; cursor: pointer; font-size: 16px; color: #334155; z-index: 10; }
     .modal-close:hover { background: #e2e8f0; }
     .modal-cover { width: 100%; max-height: 400px; object-fit: cover; border-radius: 10px; margin: 16px 0; }
@@ -115,13 +126,6 @@
       renderPosts();
     }
 
-    function getPlainExcerpt(raw) {
-      const div = document.createElement('div');
-      div.innerHTML = String(raw || '');
-      const text = (div.textContent || div.innerText || '').replace(/\s+/g, ' ').trim();
-      return text.length > 100 ? text.slice(0, 100) + '...' : text;
-    }
-
     function formatRichContent(raw) {
       const str = String(raw || '');
       const hasHtmlTag = /<(p|div|br|b|strong|i|em|u|s|strike|h[1-6]|ul|ol|li|span|font|a|table|tr|td|th|blockquote)\b/i.test(str);
@@ -152,26 +156,23 @@
         return;
       }
 
-      grid.innerHTML = filtered.map(post => {
-        const excerpt = getPlainExcerpt(post.content);
-        return `
-          <article class="post-card" onclick="openModal('${escapeJs(post.id)}')">
-            ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="文章圖片" loading="lazy" />` : ''}
-            <div class="post-body">
-              <div class="post-meta">
-                ${post.category ? `<span class="badge">${escapeHtml(post.category)}</span>` : '<span></span>'}
-                <span class="date">${escapeHtml(post.createdAt || '')}</span>
-              </div>
-              <h2 class="post-title">${escapeHtml(post.title)}</h2>
-              <p class="post-excerpt">${escapeHtml(excerpt)}</p>
-              <div class="post-footer">
-                <span class="read-hint">點開檢閱全文 →</span>
-                ${post.linkUrl ? `<a class="btn" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(post.linkText || '前往連結')}</a>` : ''}
-              </div>
+      grid.innerHTML = filtered.map(post => `
+        <article class="post-card" onclick="openModal('${escapeJs(post.id)}')">
+          ${post.imageUrl ? `<img src="${escapeHtml(post.imageUrl)}" alt="文章圖片" loading="lazy" />` : ''}
+          <div class="post-body">
+            <div class="post-meta">
+              ${post.category ? `<span class="badge">${escapeHtml(post.category)}</span>` : '<span></span>'}
+              <span class="date">${escapeHtml(post.createdAt || '')}</span>
             </div>
-          </article>
-        `;
-      }).join('');
+            <h2 class="post-title">${escapeHtml(post.title)}</h2>
+            <div class="post-excerpt" onclick="if(event.target.closest('a')) event.stopPropagation()">${formatRichContent(post.content)}</div>
+            <div class="post-footer">
+              <span class="read-hint">點開檢閱全文 →</span>
+              ${post.linkUrl ? `<a class="btn" href="${escapeHtml(post.linkUrl)}" target="_blank" rel="noopener" onclick="event.stopPropagation()">${escapeHtml(post.linkText || '前往連結')}</a>` : ''}
+            </div>
+          </div>
+        </article>
+      `).join('');
     }
 
     function openModal(postId) {
