@@ -4,5 +4,16 @@
   "categories": [
     "刷題網站"
   ],
-  "posts": []
+  "posts": [
+    {
+      "id": "post_1795351641578",
+      "category": "刷題網站",
+      "title": "工業配線 C1~C2",
+      "content": "內容有誤請私訊告知",
+      "imageUrl": "",
+      "linkText": "",
+      "linkUrl": "https://ptuucd.github.io/ee115-2-C-1-2/",
+      "createdAt": "2026-11-22"
+    }
+  ]
 }
