@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>網站管理員後台</title>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f1f5f9; color: #1e293b; margin: 0; line-height: 1.6; }
+    .topbar { background: #0f172a; color: #fff; padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
+    .topbar a, .topbar button { color: #e2e8f0; background: none; border: 1px solid #334155; padding: 6px 14px; border-radius: 6px; text-decoration: none; cursor: pointer; font-size: 13px; }
+    .auth-box { max-width: 420px; margin: 64px auto; background: #fff; padding: 32px; border-radius: 14px; box-shadow: 0 10px 25px rgba(0,0,0,0.06); }
+    .auth-box h2 { margin-top: 0; font-size: 22px; }
+    .dashboard { max-width: 860px; margin: 28px auto; padding: 0 20px; display: none; }
+    .panel { background: #fff; padding: 24px; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .panel h3 { margin-top: 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 10px; }
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 5px; color: #475569; }
+    input[type="text"], input[type="password"], input[type="url"], select, textarea {
+      width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px; font-family: inherit;
+    }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .row > div { flex: 1; min-width: 200px; }
+    .btn { background: #2563eb; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 500; }
+    .btn:hover { background: #1d4ed8; }
+    .btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .btn-danger { background: #dc2626; }
+    .btn-danger:hover { background: #b91c1c; }
+    .btn-secondary { background: #64748b; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .tag-list { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+    .tag { background: #e0e7ff; color: #1e40af; padding: 5px 12px; border-radius: 16px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+    .tag button { background: none; border: none; color: #1e40af; font-weight: bold; cursor: pointer; padding: 0; font-size: 15px; }
+    .post-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f1f5f9; gap: 12px; }
+    .post-item:last-child { border-bottom: none; }
+    .status { margin-top: 12px; font-size: 13px; font-weight: 500; }
+    .link-switch { display: inline-block; margin-top: 14px; font-size: 13px; color: #2563eb; cursor: pointer; text-decoration: underline; }
+    .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 100; }
+  </style>
+</head>
+<body>
+
+  <div class="topbar">
+    <strong>網站管理後台</strong>
+    <div>
+      <a href="./index.html">← 返回首頁</a>
+      <button id="logout-btn" style="display:none; margin-left:8px;" onclick="logout()">登出</button>
+    </div>
+  </div>
+
+  <!-- 1. 初次設定密碼畫面 -->
+  <div id="setup-view" class="auth-box" style="display:none;">
+    <h2>初次設定管理員密碼</h2>
+    <p style="font-size:13px; color:#64748b;">系統會使用你設定的密碼將 GitHub Token 加密保存，之後登入只需輸入自訂密碼。</p>
+    <div class="form-group">
+      <label>GitHub Fine-grained Token（只需輸入這一次）</label>
+      <input type="password" id="setup-token" placeholder="github_pat_..." />
+    </div>
+    <div class="form-group">
+      <label>設定你的自訂管理員密碼</label>
+      <input type="password" id="setup-pwd" placeholder="請輸入好記的密碼" />
+    </div>
+    <div class="form-group">
+      <label>再次確認密碼</label>
+      <input type="password" id="setup-pwd2" placeholder="再輸入一次密碼" />
+    </div>
+    <button id="setup-btn" class="btn" style="width:100%;" onclick="setupPassword()">加密綁定並進入後台</button>
+    <div id="setup-status" class="status"></div>
+    <span id="back-to-login-link" class="link-switch" style="display:none;" onclick="showView('login-view')">返回密碼登入</span>
+  </div>
+
+  <!-- 2. 管理員密碼登入畫面 -->
+  <div id="login-view" class="auth-box" style="display:none;">
+    <h2>管理員登入</h2>
+    <div class="form-group">
+      <label>請輸入管理員密碼</label>
+      <input type="password" id="login-pwd" placeholder="輸入你設定的密碼" onkeydown="if(event.key==='Enter') loginWithPassword()" />
+    </div>
+    <button id="login-btn" class="btn" style="width:100%;" onclick="loginWithPassword()">登入</button>
+    <div id="login-status" class="status"></div>
+    <span class="link-switch" onclick="switchToReset()">忘記密碼或要更換 Token？重新設定</span>
+  </div>
+
+  <!-- 3. 管理後台主介面 -->
+  <div id="dashboard-view" class="dashboard">
+    
+    <!-- 網站標題與分類管理 -->
+    <div class="panel">
+      <h3>網站標題與分類管理</h3>
+      <div class="row">
+        <div class="form-group">
+          <label>網站主標題</label>
+          <input type="text" id="cfg-title" />
+        </div>
+        <div class="form-group">
+          <label>網站副標題（選填）</label>
+          <input type="text" id="cfg-subtitle" />
+        </div>
+      </div>
+      <button class="btn btn-sm" onclick="saveSiteInfo()">更新網站標題</button>
+
+      <div style="margin-top:20px;">
+        <label style="display:block; font-size:13px; font-weight:600; margin-bottom:8px; color:#475569;">自訂分類（新增後會自動出現在首頁，點擊 × 可刪除）</label>
+        <div id="category-tags" class="tag-list"></div>
+        <div style="display:flex; gap:8px; max-width:360px;">
+          <input type="text" id="new-category-input" placeholder="輸入新分類名稱..." onkeydown="if(event.key==='Enter') addCategory()" />
+          <button class="btn btn-sm" onclick="addCategory()">新增分類</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 發布 / 編輯文章 -->
+    <div class="panel" id="editor-panel">
+      <h3 id="editor-heading">發布新文章</h3>
+      <input type="hidden" id="edit-post-id" value="" />
+      <div class="row">
+        <div class="form-group">
+          <label>文章分類</label>
+          <select id="post-category"></select>
+        </div>
+        <div class="form-group">
+          <label>文章標題</label>
+          <input type="text" id="post-title" placeholder="輸入文章標題" />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>上傳圖片（選填，系統會自動壓縮）</label>
+        <input type="file" id="post-image" accept="image/*" />
+        <div id="current-image-hint" style="font-size:12px; color:#64748b; margin-top:4px; display:none;">
+          目前已有封面圖 <label style="display:inline; font-weight:normal; cursor:pointer;"><input type="checkbox" id="remove-image-chk" /> 移除現有圖片</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>文章內容</label>
+        <textarea id="post-content" rows="5" placeholder="輸入文章內文..."></textarea>
+      </div>
+      <div class="row">
+        <div class="form-group">
+          <label>外部連結按鈕文字（選填）</label>
+          <input type="text" id="post-link-text" placeholder="例如：查看連結" />
+        </div>
+        <div class="form-group">
+          <label>外部連結網址（選填）</label>
+          <input type="url" id="post-link-url" placeholder="https://..." />
+        </div>
+      </div>
+      <button id="publish-btn" class="btn" onclick="submitPost()">發布文章</button>
+      <button id="cancel-edit-btn" class="btn btn-secondary" style="display:none; margin-left:8px;" onclick="resetPostForm()">取消編輯</button>
+    </div>
+
+    <!-- 已發布文章列表 -->
+    <div class="panel">
+      <h3>已發布文章管理</h3>
+      <div id="admin-post-list"></div>
+    </div>
+
+  </div>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    const CONFIG = {
+      owner: 'ptuucd',
+      repo: 'create-by-hyj',
+      branch: 'main'
+    };
+    const ENCRYPTED_TOKEN = "__ENCRYPTED_TOKEN_PLACEHOLDER__";
+    const API_BASE = `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}`;
+
+    let activeToken = '';
+    let siteData = { siteTitle: '', siteSubtitle: '', categories: [], posts: [] };
+
+    // === 加密 / 解密工具 ===
+    function bufToB64(buf) {
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+    function b64ToBuf(b64) {
+      const bin = atob(b64);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return bytes;
+    }
+    async function deriveKey(password, salt) {
+      const baseKey = await crypto.subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveKey']);
+      return crypto.subtle.deriveKey(
+        { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+        baseKey,
+        { name: 'AES-GCM', length: 256 },
+        false,
+        ['encrypt', 'decrypt']
+      );
+    }
+    async function encryptToken(token, password) {
+      const salt = crypto.getRandomValues(new Uint8Array(16));
+      const iv = crypto.getRandomValues(new Uint8Array(12));
+      const key = await deriveKey(password, salt);
+      const cipher = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, new TextEncoder().encode(token));
+      const combined = new Uint8Array(16 + 12 + cipher.byteLength);
+      combined.set(salt, 0);
+      combined.set(iv, 16);
+      combined.set(new Uint8Array(cipher), 28);
+      return bufToB64(combined);
+    }
+    async function decryptToken(encryptedB64, password) {
+      const combined = b64ToBuf(encryptedB64);
+      const salt = combined.slice(0, 16);
+      const iv = combined.slice(16, 28);
+      const cipher = combined.slice(28);
+      const key = await deriveKey(password, salt);
+      const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, cipher);
+      return new TextDecoder().decode(plainBuf);
+    }
+
+    // === 頁面狀態控制 ===
+    function showView(viewId) {
+      ['setup-view', 'login-view', 'dashboard-view'].forEach(id => {
+        document.getElementById(id).style.display = id === viewId ? 'block' : 'none';
+      });
+      document.getElementById('logout-btn').style.display = viewId === 'dashboard-view' ? 'inline-block' : 'none';
+    }
+
+    function initAuth() {
+      const saved = sessionStorage.getItem('gh_unlocked_token');
+      if (saved) {
+        activeToken = saved;
+        enterDashboard();
+        return;
+      }
+      if (ENCRYPTED_TOKEN === "__ENCRYPTED_TOKEN_PLACEHOLDER__" || !ENCRYPTED_TOKEN) {
+        showView('setup-view');
+      } else {
+        showView('login-view');
+      }
+    }
+
+    function switchToReset() {
+      document.getElementById('back-to-login-link').style.display = 'inline-block';
+      showView('setup-view');
+    }
+
+    async function setupPassword() {
+      const token = document.getElementById('setup-token').value.trim();
+      const pwd = document.getElementById('setup-pwd').value;
+      const pwd2 = document.getElementById('setup-pwd2').value;
+      const statusEl = document.getElementById('setup-status');
+      const btn = document.getElementById('setup-btn');
+
+      if (!token || !pwd) { statusEl.style.color = '#dc2626'; statusEl.textContent = '請完整填寫 Token 與自訂密碼。'; return; }
+      if (pwd !== pwd2) { statusEl.style.color = '#dc2626'; statusEl.textContent = '兩次輸入的密碼不一致。'; return; }
+
+      btn.disabled = true;
+      statusEl.style.color = '#2563eb';
+      statusEl.textContent = '正在驗證 Token 並寫入加密設定...';
+
+      try {
+        const repoRes = await fetch(API_BASE, { headers: { 'Authorization': `Bearer ${token}` } });
+        const repoData = await repoRes.json();
+        if (!repoRes.ok || (repoData.permissions && !repoData.permissions.push)) {
+          throw new Error('Token 無效或沒有讀寫權限');
+        }
+
+        const encryptedStr = await encryptToken(token, pwd);
+
+        const fileRes = await fetch(`${API_BASE}/contents/admin.html?ref=${CONFIG.branch}&t=${Date.now()}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const fileMeta = await fileRes.json();
+        const bin = atob(fileMeta.content.replace(/\s/g, ''));
+        const bytes = new Uint8Array(bin.length);
+        for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        let htmlText = new TextDecoder().decode(bytes);
+
+        htmlText = htmlText.replace(/const ENCRYPTED_TOKEN = ".*?";/, `const ENCRYPTED_TOKEN = "${encryptedStr}";`);
+
+        const putRes = await fetch(`${API_BASE}/contents/admin.html`, {
+          method: 'PUT',
+          headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            message: 'Configure encrypted admin password',
+            content: utf8ToB64(htmlText),
+            sha: fileMeta.sha,
+            branch: CONFIG.branch
+          })
+        });
+        if (!putRes.ok) throw new Error('寫入 admin.html 失敗');
+
+        activeToken = token;
+        sessionStorage.setItem('gh_unlocked_token', token);
+        showToast('密碼綁定成功！約 1 分鐘後部署完成即可用自訂密碼登入。');
+        enterDashboard();
+      } catch (err) {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = `設定失敗：${err.message}`;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    async function loginWithPassword() {
+      const pwd = document.getElementById('login-pwd').value;
+      const statusEl = document.getElementById('login-status');
+      const btn = document.getElementById('login-btn');
+      if (!pwd) return;
+
+      btn.disabled = true;
+      statusEl.style.color = '#2563eb';
+      statusEl.textContent = '正在驗證密碼...';
+
+      try {
+        const token = await decryptToken(ENCRYPTED_TOKEN, pwd);
+        const res = await fetch(API_BASE, { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('Token 已失效，請點下方重新設定');
+
+        activeToken = token;
+        sessionStorage.setItem('gh_unlocked_token', token);
+        statusEl.textContent = '';
+        enterDashboard();
+      } catch (err) {
+        statusEl.style.color = '#dc2626';
+        statusEl.textContent = err.name === 'OperationError' ? '管理員密碼錯誤！' : err.message;
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem('gh_unlocked_token');
+      activeToken = '';
+      document.getElementById('login-pwd').value = '';
+      showView('login-view');
+    }
+
+    // === 後台資料讀寫 ===
+    async function enterDashboard() {
+      showView('dashboard-view');
+      await loadSiteData();
+    }
+
+    async function loadSiteData() {
+      const res = await fetch(`./data.json?t=${Date.now()}`);
+      siteData = await res.json();
+      document.getElementById('cfg-title').value = siteData.siteTitle || '';
+      document.getElementById('cfg-subtitle').value = siteData.siteSubtitle || '';
+      renderAdminCategories();
+      renderAdminPosts();
+    }
+
+    async function commitDataJson(commitMsg) {
+      const getRes = await fetch(`${API_BASE}/contents/data.json?ref=${CONFIG.branch}&t=${Date.now()}`, {
+        headers: { 'Authorization': `Bearer ${activeToken}` }
+      });
+      const meta = await getRes.json();
+
+      const putRes = await fetch(`${API_BASE}/contents/data.json`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${activeToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: commitMsg,
+          content: utf8ToB64(JSON.stringify(siteData, null, 2)),
+          sha: meta.sha,
+          branch: CONFIG.branch
+        })
+      });
+      if (!putRes.ok) throw new Error('儲存資料失敗');
+      showToast('已成功儲存至 GitHub！（約 30 秒～1 分鐘更新至前台）');
+    }
+
+    async function saveSiteInfo() {
+      siteData.siteTitle = document.getElementById('cfg-title').value.trim();
+      siteData.siteSubtitle = document.getElementById('cfg-subtitle').value.trim();
+      await commitDataJson('Update site title');
+    }
+
+    function renderAdminCategories() {
+      const tagsEl = document.getElementById('category-tags');
+      const selectEl = document.getElementById('post-category');
+      const cats = siteData.categories || [];
+
+      tagsEl.innerHTML = cats.length > 0
+        ? cats.map((c, idx) => `<span class="tag">${escapeHtml(c)} <button onclick="deleteCategory(${idx})" title="刪除分類">×</button></span>`).join('')
+        : '<span style="color:#94a3b8; font-size:13px;">目前尚無分類，請在下方新增</span>';
+
+      selectEl.innerHTML = '<option value="">未分類</option>' + cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('');
+    }
+
+    async function addCategory() {
+      const input = document.getElementById('new-category-input');
+      const name = input.value.trim();
+      if (!name) return;
+      if (!siteData.categories) siteData.categories = [];
+      if (siteData.categories.includes(name)) { showToast('此分類已存在'); return; }
+
+      siteData.categories.push(name);
+      input.value = '';
+      renderAdminCategories();
+      await commitDataJson(`Add category: ${name}`);
+    }
+
+    async function deleteCategory(idx) {
+      const target = siteData.categories[idx];
+      if (!confirm(`確定要刪除「${target}」分類嗎？`)) return;
+      siteData.categories.splice(idx, 1);
+      renderAdminCategories();
+      await commitDataJson(`Delete category: ${target}`);
+    }
+
+    // === 文章發布 / 編輯 / 刪除 ===
+    async function submitPost() {
+      const btn = document.getElementById('publish-btn');
+      const editId = document.getElementById('edit-post-id').value;
+      const category = document.getElementById('post-category').value;
+      const title = document.getElementById('post-title').value.trim();
+      const content = document.getElementById('post-content').value.trim();
+      const linkText = document.getElementById('post-link-text').value.trim();
+      const linkUrl = document.getElementById('post-link-url').value.trim();
+      const fileInput = document.getElementById('post-image');
+
+      if (!title || !content) { alert('請填寫文章標題與內容！'); return; }
+
+      btn.disabled = true;
+      btn.textContent = '處理中...';
+
+      try {
+        const existingPost = editId ? siteData.posts.find(p => p.id === editId) : null;
+        let imageUrl = existingPost ? existingPost.imageUrl : '';
+
+        if (document.getElementById('remove-image-chk').checked) {
+          imageUrl = '';
+        }
+
+        if (fileInput.files.length > 0) {
+          showToast('正在壓縮並上傳圖片...');
+          const compressedB64 = await compressImageToBase64(fileInput.files[0]);
+          const imgPath = `images/post_${Date.now()}.jpg`;
+          const imgRes = await fetch(`${API_BASE}/contents/${imgPath}`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${activeToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: `Upload ${imgPath}`, content: compressedB64, branch: CONFIG.branch })
+          });
+          if (!imgRes.ok) throw new Error('圖片上傳失敗');
+          imageUrl = imgPath;
+        }
+
+        if (existingPost) {
+          Object.assign(existingPost, { category, title, content, imageUrl, linkText, linkUrl });
+          await commitDataJson(`Edit post: ${title}`);
+        } else {
+          const today = new Date().toISOString().split('T')[0];
+          siteData.posts.unshift({
+            id: 'post_' + Date.now(),
+            category, title, content, imageUrl, linkText, linkUrl,
+            createdAt: today
+          });
+          await commitDataJson(`Publish post: ${title}`);
+        }
+
+        resetPostForm();
+        renderAdminPosts();
+      } catch (err) {
+        alert(`發生錯誤：${err.message}`);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = document.getElementById('edit-post-id').value ? '儲存修改' : '發布文章';
+      }
+    }
+
+    function editPost(id) {
+      const post = siteData.posts.find(p => p.id === id);
+      if (!post) return;
+      document.getElementById('edit-post-id').value = post.id;
+      document.getElementById('editor-heading').textContent = '編輯文章';
+      document.getElementById('post-category').value = post.category || '';
+      document.getElementById('post-title').value = post.title;
+      document.getElementById('post-content').value = post.content;
+      document.getElementById('post-link-text').value = post.linkText || '';
+      document.getElementById('post-link-url').value = post.linkUrl || '';
+      document.getElementById('remove-image-chk').checked = false;
+      document.getElementById('current-image-hint').style.display = post.imageUrl ? 'block' : 'none';
+      document.getElementById('publish-btn').textContent = '儲存修改';
+      document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+      document.getElementById('editor-panel').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function resetPostForm() {
+      document.getElementById('edit-post-id').value = '';
+      document.getElementById('editor-heading').textContent = '發布新文章';
+      document.getElementById('post-title').value = '';
+      document.getElementById('post-content').value = '';
+      document.getElementById('post-link-text').value = '';
+      document.getElementById('post-link-url').value = '';
+      document.getElementById('post-image').value = '';
+      document.getElementById('current-image-hint').style.display = 'none';
+      document.getElementById('publish-btn').textContent = '發布文章';
+      document.getElementById('cancel-edit-btn').style.display = 'none';
+    }
+
+    async function deletePost(id) {
+      const idx = siteData.posts.findIndex(p => p.id === id);
+      if (idx === -1) return;
+      if (!confirm(`確定要刪除「${siteData.posts[idx].title}」嗎？`)) return;
+      const title = siteData.posts[idx].title;
+      siteData.posts.splice(idx, 1);
+      renderAdminPosts();
+      await commitDataJson(`Delete post: ${title}`);
+    }
+
+    function renderAdminPosts() {
+      const list = document.getElementById('admin-post-list');
+      if (!siteData.posts || siteData.posts.length === 0) {
+        list.innerHTML = '<p style="color:#64748b; font-size:14px;">目前尚未發布任何文章。</p>';
+        return;
+      }
+      list.innerHTML = siteData.posts.map(p => `
+        <div class="post-item">
+          <div>
+            ${p.category ? `<span class="tag" style="padding:2px 8px; font-size:12px;">${escapeHtml(p.category)}</span>` : ''}
+            <strong style="margin-left:${p.category ? '6px' : '0'};">${escapeHtml(p.title)}</strong>
+            <span style="color:#94a3b8; font-size:12px; margin-left:8px;">${escapeHtml(p.createdAt)}</span>
+          </div>
+          <div style="display:flex; gap:6px; flex-shrink:0;">
+            <button class="btn btn-sm btn-secondary" onclick="editPost('${escapeJs(p.id)}')">編輯</button>
+            <button class="btn btn-sm btn-danger" onclick="deletePost('${escapeJs(p.id)}')">刪除</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function compressImageToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => {
+          const maxW = 1200;
+          const scale = img.width > maxW ? maxW / img.width : 1;
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
+          resolve(canvas.toDataURL('image/jpeg', 0.82).split(',')[1]);
+        };
+        img.onerror = reject;
+        img.src = URL.createObjectURL(file);
+      });
+    }
+
+    function utf8ToB64(str) {
+      const bytes = new TextEncoder().encode(str);
+      let bin = '';
+      for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
+      return btoa(bin);
+    }
+
+    function escapeHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, m => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    }
+
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.style.display = 'block';
+      setTimeout(() => t.style.display = 'none', 4000);
+    }
+
+    initAuth();
+  </script>
+</body>
+</html>
