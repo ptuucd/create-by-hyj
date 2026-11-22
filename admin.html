@@ -35,6 +35,9 @@
     .status { margin-top: 12px; font-size: 13px; font-weight: 500; }
     .link-switch { display: inline-block; margin-top: 14px; font-size: 13px; color: #2563eb; cursor: pointer; text-decoration: underline; }
     .toast { position: fixed; bottom: 20px; right: 20px; background: #0f172a; color: #fff; padding: 12px 20px; border-radius: 8px; font-size: 14px; display: none; z-index: 100; }
+    .storage-pill { font-size: 12px; padding: 3px 10px; border-radius: 12px; font-weight: 600; }
+    .storage-gdrive { background: #dcfce7; color: #166534; }
+    .storage-github { background: #e2e8f0; color: #475569; }
 
     /* 匿名小建議卡片樣式 */
     .sug-card { border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
@@ -123,7 +126,7 @@
   <!-- 3. 管理後台主介面 -->
   <div id="dashboard-view" class="dashboard">
 
-    <!-- 匿名小建議信箱 -->
+    <!-- 匿名小建議信箱與 Google 雲端橋接設定 -->
     <div class="panel">
       <h3>
         <span>💬 匿名小建議信箱 <span id="sug-count-badge" class="sug-badge" style="font-size:12px; margin-left:4px;">0</span></span>
@@ -134,15 +137,15 @@
       </div>
 
       <details id="sug-settings-details" style="margin-top:16px;">
-        <summary style="cursor:pointer; font-size:13px; font-weight:600; color:#2563eb;">⚙️ 建議箱接收設定（首次啟用請展開設定）</summary>
+        <summary style="cursor:pointer; font-size:13px; font-weight:600; color:#2563eb;">⚙️ Google 雲端橋接設定（建議箱與 Google 雲端硬碟存圖共用）</summary>
         <div class="sug-config-box">
           <div style="margin-bottom:10px;">
-            <strong>1. 你的專屬讀取密鑰：</strong>
+            <strong>1. 你的專屬金鑰：</strong>
             <span id="admin-sug-key" class="key-pill">計算中...</span>
             <button type="button" class="btn btn-sm btn-secondary" style="margin-left:6px;" onclick="copySugKey()">複製密鑰</button>
           </div>
           <div class="form-group" style="margin-bottom:8px;">
-            <label>2. 貼上 Google Apps Script 網頁應用程式網址</label>
+            <label>2. Google Apps Script 網頁應用程式網址</label>
             <div style="display:flex; gap:8px;">
               <input type="url" id="cfg-sug-url" placeholder="https://script.google.com/macros/s/.../exec" />
               <button type="button" class="btn btn-sm" style="flex-shrink:0;" onclick="saveSuggestionUrl()">儲存網址</button>
@@ -179,7 +182,10 @@
 
     <!-- 發布 / 編輯文章 -->
     <div class="panel" id="editor-panel">
-      <h3 id="editor-heading">發布新文章</h3>
+      <h3>
+        <span id="editor-heading">發布新文章</span>
+        <span id="img-storage-badge" class="storage-pill storage-github">圖片儲存：偵測中...</span>
+      </h3>
       <input type="hidden" id="edit-post-id" value="" />
       <div class="row">
         <div class="form-group">
@@ -258,7 +264,6 @@
             </div>
           </div>
 
-          <!-- 隱藏的多圖上傳輸入框 -->
           <input type="file" id="inline-image-input" accept="image/*" multiple style="display:none;" onchange="handleInlineImages(this.files); this.value='';" />
 
           <div class="table-tools" id="table-tools-bar" style="display:none;">
@@ -356,9 +361,20 @@
     let savedRange = null;
     let isUploadingInlineImages = false;
 
-    // === 富文本編輯器游標與指令控制 ===
     const editorEl = document.getElementById('post-editor');
     const wrapperEl = document.getElementById('editor-wrapper');
+
+    function updateStorageBadge() {
+      const badge = document.getElementById('img-storage-badge');
+      const hasGas = Boolean((siteData.suggestionApiUrl || '').trim());
+      if (hasGas) {
+        badge.className = 'storage-pill storage-gdrive';
+        badge.textContent = '✓ 圖片存至 Google 雲端硬碟（不佔 GitHub 空間）';
+      } else {
+        badge.className = 'storage-pill storage-github';
+        badge.textContent = '圖片存至 GitHub（設定上方網址可改存 Google 雲端）';
+      }
+    }
 
     function saveSelection() {
       const sel = window.getSelection();
@@ -389,13 +405,11 @@
     editorEl.addEventListener('keyup', saveSelection);
     editorEl.addEventListener('focus', updateTableToolbarVisibility);
 
-    // === 支援多圖上傳、Ctrl+V 貼上截圖、拖曳圖片 ===
     function triggerInlineImageUpload() {
       saveSelection();
       document.getElementById('inline-image-input').click();
     }
 
-    // 監聽 Ctrl+V 貼上圖片
     editorEl.addEventListener('paste', (e) => {
       const items = e.clipboardData && e.clipboardData.items;
       if (!items) return;
@@ -413,7 +427,6 @@
       }
     });
 
-    // 監聽拖曳圖片進編輯區
     wrapperEl.addEventListener('dragover', (e) => {
       e.preventDefault();
       wrapperEl.classList.add('drag-over');
@@ -435,12 +448,35 @@
       }
     });
 
-    async function uploadSingleImageToGitHub(file) {
+    // 智慧上傳：若有設定 Google Apps Script 網址，自動上傳至 Google 雲端硬碟；否則退回 GitHub
+    async function uploadSingleImage(file) {
       const compressedB64 = await compressImageToBase64(file);
-      const ym = new Date().toISOString().slice(0, 7); // 例如 2026-11，自動按月份分資料夾
+      const gasUrl = (siteData.suggestionApiUrl || '').trim();
+
+      if (gasUrl) {
+        const fileName = `note_${Date.now()}_${Math.random().toString(36).slice(2, 6)}.jpg`;
+        const res = await fetch(gasUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'uploadImage',
+            key: suggestionReadKey,
+            base64: compressedB64,
+            mimeType: 'image/jpeg',
+            fileName
+          })
+        });
+        const result = await res.json();
+        if (!result.ok || !result.url) {
+          throw new Error(result.error || 'Google 雲端硬碟上傳失敗（請確認 Apps Script 已部署為新版本並授權雲端硬碟）');
+        }
+        return result.url;
+      }
+
+      // 備援：上傳至 GitHub
+      const ym = new Date().toISOString().slice(0, 7);
       const uniqueId = Date.now() + '_' + Math.random().toString(36).slice(2, 6);
       const imgPath = `images/${ym}/img_${uniqueId}.jpg`;
-
       const imgRes = await fetch(`${API_BASE}/contents/${imgPath}`, {
         method: 'PUT',
         headers: { 'Authorization': `Bearer ${activeToken}`, 'Content-Type': 'application/json' },
@@ -467,22 +503,23 @@
 
       isUploadingInlineImages = true;
       const pubBtn = document.getElementById('publish-btn');
-      const prevBtnText = pubBtn.textContent;
       pubBtn.disabled = true;
       pubBtn.textContent = '圖片上傳中...';
 
+      const targetLabel = (siteData.suggestionApiUrl || '').trim() ? 'Google 雲端硬碟' : 'GitHub';
       let successCount = 0;
+
       try {
         for (let i = 0; i < files.length; i++) {
-          showToast(`正在壓縮並上傳第 ${i + 1} / ${files.length} 張圖片...`);
-          const ghPath = await uploadSingleImageToGitHub(files[i]);
+          showToast(`正在上傳第 ${i + 1} / ${files.length} 張至 ${targetLabel}...`);
+          const finalUrl = await uploadSingleImage(files[i]);
           const localPreviewUrl = URL.createObjectURL(files[i]);
 
           restoreSelection();
 
           const img = document.createElement('img');
-          img.src = localPreviewUrl; // 立即在編輯區預覽，不需等待 GitHub Pages 部署
-          img.setAttribute('data-gh-src', ghPath);
+          img.src = localPreviewUrl;
+          img.setAttribute('data-gh-src', finalUrl);
           img.alt = '筆記圖片';
 
           const pAfter = document.createElement('p');
@@ -506,7 +543,7 @@
           saveSelection();
           successCount++;
         }
-        showToast(`已成功插入 ${successCount} 張圖片！`);
+        showToast(`已成功上傳 ${successCount} 張圖片至 ${targetLabel}！`);
       } catch (err) {
         alert(`圖片上傳中斷（已成功 ${successCount} 張）：${err.message}`);
       } finally {
@@ -516,7 +553,6 @@
       }
     }
 
-    // 儲存前把暫時預覽的 blob 網址轉回正式的 GitHub 相對路徑
     function getCleanEditorHtml() {
       const clone = editorEl.cloneNode(true);
       clone.querySelectorAll('img[data-gh-src]').forEach(img => {
@@ -964,6 +1000,7 @@
       if (!siteData.suggestionApiUrl) {
         document.getElementById('sug-settings-details').open = true;
       }
+      updateStorageBadge();
       renderAdminCategories();
       renderAdminPosts();
       loadSuggestions();
@@ -1006,6 +1043,7 @@
     async function saveSuggestionUrl() {
       const url = document.getElementById('cfg-sug-url').value.trim();
       siteData.suggestionApiUrl = url;
+      updateStorageBadge();
       await commitDataJson('Update suggestion API URL');
       loadSuggestions();
     }
@@ -1017,7 +1055,7 @@
 
       if (!apiUrl) {
         badgeEl.textContent = '0';
-        listEl.innerHTML = '<p style="color:#64748b; font-size:13px; margin:0;">尚未設定建議箱網址，請展開下方「⚙️ 建議箱接收設定」完成綁定。</p>';
+        listEl.innerHTML = '<p style="color:#64748b; font-size:13px; margin:0;">尚未設定網址，請展開下方「⚙️ Google 雲端橋接設定」完成綁定。</p>';
         return;
       }
 
@@ -1141,8 +1179,9 @@
         }
 
         if (fileInput.files.length > 0) {
-          showToast('正在壓縮並上傳封面主圖...');
-          imageUrl = await uploadSingleImageToGitHub(fileInput.files[0]);
+          const targetLabel = (siteData.suggestionApiUrl || '').trim() ? 'Google 雲端硬碟' : 'GitHub';
+          showToast(`正在上傳封面主圖至 ${targetLabel}...`);
+          imageUrl = await uploadSingleImage(fileInput.files[0]);
         }
 
         if (existingPost) {
