@@ -1,7 +1,6 @@
 {
-  "title": "歡迎來到我的網站",
-  "description": "這段文字、下方按鈕連結與上方圖片，都可以直接透過網頁管理員後台即時修改。",
-  "linkText": "前往我的 GitHub",
-  "linkUrl": "https://github.com",
-  "imageUrl": "https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=800&q=80"
+  "siteTitle": "我的網站",
+  "siteSubtitle": "",
+  "categories": [],
+  "posts": []
 }
