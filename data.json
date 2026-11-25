@@ -7,6 +7,16 @@
   ],
   "posts": [
     {
+      "id": "post_1795621600465",
+      "category": "📢 update",
+      "title": "update 1.01.00 !!",
+      "content": "<div style=\"text-align: center;\"><span style=\"font-weight: bold;\">瘋狂刷題模式 is coming soon !</span></div><div>功能介紹：</div><div>1. ⏱️ 答錯倒數 3 秒原地重作</div><div>2. 🔁 錯1罰 3（3 題後循環重現）：每答錯一次，該題就會累計 <span style=\"background-color: rgb(254, 240, 138);\">+3</span> 次額外複習次數</div><div style=\"text-align: center;\"><span style=\"font-style: italic; text-decoration-line: underline;\">功能將適用於本篇之後的刷題網站～</span></div>",
+      "imageUrl": "",
+      "linkText": "",
+      "linkUrl": "",
+      "createdAt": "2026-11-25"
+    },
+    {
       "id": "post_1795621488132",
       "category": "📢 update",
       "title": "update 1.01.00 !!",
